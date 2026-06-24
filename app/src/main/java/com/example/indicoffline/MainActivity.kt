@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private lateinit var asrEngine: IndicAsrEngine
     private val audioCapturer = AudioCapturer()
+    private var llamaCtx: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,30 +32,63 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             asrEngine.loadLanguage("hi")
+            if (!ModelDownloader.isModelDownloaded(this@MainActivity)) {
+                android.util.Log.d("LlamaTest", "Downloading model...")
+                ModelDownloader.downloadModel(this@MainActivity) { progress ->
+                    android.util.Log.d("LlamaTest", "Download progress: $progress%")
+                }
+            }
+            val modelPath = ModelDownloader.getModelFile(this@MainActivity).absolutePath
+            llamaCtx = LlamaWrapper.loadModel(modelPath)
+            android.util.Log.d("LlamaTest", if (llamaCtx != 0L) "Model loaded" else "Model load FAILED")
         }
 
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AsrScreen(asrEngine, audioCapturer)
+                    AsrScreen(asrEngine, audioCapturer, ::translate)
                 }
             }
+        }
+    }
+
+    private suspend fun translate(text: String, srcLang: String, targetLang: String): String {
+        if (llamaCtx == 0L) return "Translation model not loaded"
+        return withContext(Dispatchers.IO) {
+            val srcName = if (srcLang == "hi") "Hindi" else "Kannada"
+
+            val toEnglishPrompt = "<bos><start_of_turn>user\nTranslate the following text from $srcName to English.\n$text<end_of_turn>\n<start_of_turn>model\n"
+            val english = LlamaWrapper.completion(llamaCtx, toEnglishPrompt)
+            android.util.Log.d("LlamaTest", "English bridge: '$english'")
+
+            val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the following text from English to $targetLang.\n$english<end_of_turn>\n<start_of_turn>model\n"
+            LlamaWrapper.completion(llamaCtx, toTargetPrompt)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         asrEngine.destroy()
+        if (llamaCtx != 0L) LlamaWrapper.freeModel(llamaCtx)
     }
 }
 
 @Composable
-fun AsrScreen(asrEngine: IndicAsrEngine, audioCapturer: AudioCapturer) {
+fun AsrScreen(
+    asrEngine: IndicAsrEngine,
+    audioCapturer: AudioCapturer,
+    translate: suspend (String, String, String) -> String
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    var srcLang by remember { mutableStateOf("hi") }
+    val targetLang = if (srcLang == "hi") "Kannada" else "Hindi"
+
     var transcription by remember { mutableStateOf("Ready. Press Record to speak.") }
+    var translation by remember { mutableStateOf("") }
     var isRecording by remember { mutableStateOf(false) }
+    var isTranslating by remember { mutableStateOf(false) }
     var hasMicPermission by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
     }
@@ -69,19 +103,52 @@ fun AsrScreen(asrEngine: IndicAsrEngine, audioCapturer: AudioCapturer) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(
+            text = "Speaking: ${if (srcLang == "hi") "Hindi" else "Kannada"} → $targetLang",
+            style = MaterialTheme.typography.labelLarge
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Button(onClick = {
-                coroutineScope.launch(Dispatchers.IO) { asrEngine.loadLanguage("hi") }
-                transcription = "Switched to Hindi"
-            }) { Text("Hindi") }
-            Button(onClick = {
-                coroutineScope.launch(Dispatchers.IO) { asrEngine.loadLanguage("kn") }
-                transcription = "Switched to Kannada"
-            }) { Text("Kannada") }
+            Button(
+                onClick = {
+                    srcLang = "hi"
+                    coroutineScope.launch(Dispatchers.IO) { asrEngine.loadLanguage("hi") }
+                    transcription = "Switched to Hindi → Kannada"
+                    translation = ""
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (srcLang == "hi") MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.secondary
+                )
+            ) { Text("Hindi") }
+
+            Button(
+                onClick = {
+                    srcLang = "kn"
+                    coroutineScope.launch(Dispatchers.IO) { asrEngine.loadLanguage("kn") }
+                    transcription = "Switched to Kannada → Hindi"
+                    translation = ""
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (srcLang == "kn") MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.secondary
+                )
+            ) { Text("Kannada") }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(text = transcription, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isTranslating) {
+            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+            Text("Translating...", style = MaterialTheme.typography.bodySmall)
+        } else if (translation.isNotEmpty()) {
+            Text(text = "Translation: $translation", style = MaterialTheme.typography.bodyMedium)
+        }
+
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
@@ -95,18 +162,30 @@ fun AsrScreen(asrEngine: IndicAsrEngine, audioCapturer: AudioCapturer) {
                         coroutineScope.launch(Dispatchers.IO) {
                             val audioData = audioCapturer.stopAndGetFloatArray()
                             val resultText = asrEngine.transcribe(audioData)
+                            android.util.Log.d("LlamaTest", "Transcription: '$resultText'")
                             withContext(Dispatchers.Main) {
                                 transcription = resultText.ifEmpty { "No speech detected." }
+                            }
+                            if (resultText.isNotEmpty()) {
+                                withContext(Dispatchers.Main) { isTranslating = true }
+                                val translated = translate(resultText, srcLang, targetLang)
+                                android.util.Log.d("LlamaTest", "Translation: '$translated'")
+                                withContext(Dispatchers.Main) {
+                                    isTranslating = false
+                                    translation = translated
+                                }
                             }
                         }
                     } else {
                         audioCapturer.startRecording()
                         isRecording = true
                         transcription = "Listening..."
+                        translation = ""
                     }
                 }
             },
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(120.dp),
+            enabled = !isTranslating
         ) {
             Text(if (isRecording) "Stop" else "Record")
         }
