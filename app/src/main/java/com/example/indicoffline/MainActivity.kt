@@ -19,14 +19,24 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private lateinit var asrEngine: IndicAsrEngine
     private val audioCapturer = AudioCapturer()
     private var llamaCtx: Long = 0L
+    private var tts: TextToSpeech? = null
+    private var isTtsReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                isTtsReady = true
+            }
+        }
 
         asrEngine = IndicAsrEngine(assets)
 
@@ -46,10 +56,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AsrScreen(asrEngine, audioCapturer, ::translate)
+                    AsrScreen(asrEngine, audioCapturer, ::translate, ::speak)
                 }
             }
         }
+    }
+
+    private fun speak(text: String, targetLang: String) {
+        if (!isTtsReady || tts == null) return
+        val locale = if (targetLang == "Hindi") Locale("hi", "IN") else Locale("kn", "IN")
+        val result = tts?.setLanguage(locale)
+
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            android.widget.Toast.makeText(this, "Please install $targetLang TTS voice data.", android.widget.Toast.LENGTH_LONG).show()
+            val installIntent = android.content.Intent()
+            installIntent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
+            try {
+                startActivity(installIntent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return
+        }
+
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     private suspend fun translate(text: String, srcLang: String, targetLang: String): String {
@@ -70,6 +100,8 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         asrEngine.destroy()
         if (llamaCtx != 0L) LlamaWrapper.freeModel(llamaCtx)
+        tts?.stop()
+        tts?.shutdown()
     }
 }
 
@@ -77,7 +109,8 @@ class MainActivity : ComponentActivity() {
 fun AsrScreen(
     asrEngine: IndicAsrEngine,
     audioCapturer: AudioCapturer,
-    translate: suspend (String, String, String) -> String
+    translate: suspend (String, String, String) -> String,
+    speak: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -146,7 +179,13 @@ fun AsrScreen(
             CircularProgressIndicator(modifier = Modifier.padding(8.dp))
             Text("Translating...", style = MaterialTheme.typography.bodySmall)
         } else if (translation.isNotEmpty()) {
-            Text(text = "Translation: $translation", style = MaterialTheme.typography.bodyMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Translation: $translation", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { speak(translation, targetLang) }) {
+                    Text("Speak")
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -173,6 +212,7 @@ fun AsrScreen(
                                 withContext(Dispatchers.Main) {
                                     isTranslating = false
                                     translation = translated
+                                    speak(translated, targetLang)
                                 }
                             }
                         }
