@@ -85,14 +85,15 @@ class MainActivity : ComponentActivity() {
     private suspend fun translate(text: String, srcLang: String, targetLang: String): String {
         if (llamaCtx == 0L) return "Translation model not loaded"
         return withContext(Dispatchers.IO) {
-            val srcName = if (srcLang == "hi") "Hindi" else "Kannada"
+            val toEnglishPrompt = "<bos><start_of_turn>user\nTranslate the text below to English.\n\n$text<end_of_turn>\n<start_of_turn>model\n"
+            val englishBridge = LlamaWrapper.completion(llamaCtx, toEnglishPrompt).trim()
+            android.util.Log.d("LlamaTest", "English bridge: '$englishBridge'")
 
-            val toEnglishPrompt = "<bos><start_of_turn>user\nTranslate the following text from $srcName to English.\n$text<end_of_turn>\n<start_of_turn>model\n"
-            val english = LlamaWrapper.completion(llamaCtx, toEnglishPrompt)
-            android.util.Log.d("LlamaTest", "English bridge: '$english'")
-
-            val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the following text from English to $targetLang.\n$english<end_of_turn>\n<start_of_turn>model\n"
-            LlamaWrapper.completion(llamaCtx, toTargetPrompt)
+            val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the text below to $targetLang.\n\n$englishBridge<end_of_turn>\n<start_of_turn>model\n"
+            val finalTranslation = LlamaWrapper.completion(llamaCtx, toTargetPrompt).trim()
+            
+            android.util.Log.d("LlamaTest", "Translation ($srcLang -> English -> $targetLang): '$finalTranslation'")
+            finalTranslation
         }
     }
 
