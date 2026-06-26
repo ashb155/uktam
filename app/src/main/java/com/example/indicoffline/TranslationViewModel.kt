@@ -12,6 +12,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
+data class ConversationMessage(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val originalText: String,
+    val translatedText: String,
+    val speakerLang: String
+)
+
 class TranslationViewModel(application: Application) : AndroidViewModel(application) {
 
     private val asrEngine = IndicAsrEngine(application.assets)
@@ -30,12 +37,12 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     private val _srcLang = MutableStateFlow("hi")
     val srcLang: StateFlow<String> = _srcLang.asStateFlow()
+    
+    private val _conversationHistory = MutableStateFlow<List<ConversationMessage>>(emptyList())
+    val conversationHistory: StateFlow<List<ConversationMessage>> = _conversationHistory.asStateFlow()
 
-    private val _transcription = MutableStateFlow("Ready. Press Record to speak.")
+    private val _transcription = MutableStateFlow("")
     val transcription: StateFlow<String> = _transcription.asStateFlow()
-
-    private val _translation = MutableStateFlow("")
-    val translation: StateFlow<String> = _translation.asStateFlow()
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
@@ -80,8 +87,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun switchLanguage(lang: String) {
         _srcLang.value = lang
-        _transcription.value = "Switched to ${if (lang == "hi") "Hindi → Kannada" else "Kannada → Hindi"}"
-        _translation.value = ""
+        _transcription.value = ""
         viewModelScope.launch(Dispatchers.IO) {
             asrEngine.loadLanguage(lang)
         }
@@ -91,7 +97,6 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         audioCapturer.startRecording()
         _isRecording.value = true
         _transcription.value = "Listening..."
-        _translation.value = ""
     }
 
     fun stopRecordingAndProcess(audioCapturer: AudioCapturer, onTtsMissing: (String) -> Unit) {
@@ -114,15 +119,23 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
                 
                 withContext(Dispatchers.Main) {
                     _isTranslating.value = false
-                    _translation.value = translated
+                    _transcription.value = ""
+                    
+                    val newMessage = ConversationMessage(
+                        originalText = resultText,
+                        translatedText = translated,
+                        speakerLang = _srcLang.value
+                    )
+                    _conversationHistory.value = _conversationHistory.value + newMessage
+                    
                     speak(translated, targetLang, onTtsMissing)
                 }
             }
         }
     }
 
-    fun speakTranslation(onTtsMissing: (String) -> Unit) {
-        speak(_translation.value, targetLang, onTtsMissing)
+    fun speakTranslation(text: String, targetLanguage: String, onTtsMissing: (String) -> Unit) {
+        speak(text, targetLanguage, onTtsMissing)
     }
 
     private fun speak(text: String, targetLang: String, onTtsMissing: (String) -> Unit) {
