@@ -27,7 +27,7 @@ object ModelDownloader {
     ): Boolean = withContext(Dispatchers.IO) {
         var attempts = 0
         var delayMs = 5000L
-        while (attempts < 5) {
+        while (attempts < 50) {
             val success = tryDownload(context, onProgress)
             if (success) return@withContext true
             attempts++
@@ -66,7 +66,11 @@ object ModelDownloader {
             }
 
             val contentLength = connection.contentLengthLong
-            val totalBytes = if (responseCode == 206) existingBytes + contentLength else contentLength
+            var totalBytes = if (responseCode == 206) existingBytes + contentLength else contentLength
+            
+            if (contentLength == -1L) {
+                totalBytes = 2469606195L
+            }
 
             connection.inputStream.use { input ->
                 val output = if (existingBytes > 0 && responseCode == 206) {
@@ -78,12 +82,24 @@ object ModelDownloader {
                     val buffer = ByteArray(65536)
                     var downloaded = if (responseCode == 206) existingBytes else 0L
                     var bytes: Int
+                    var lastProgress = -1
+                    var lastLogTime = 0L
                     while (input.read(buffer).also { bytes = it } != -1) {
                         it.write(buffer, 0, bytes)
                         downloaded += bytes
+                        
                         if (totalBytes > 0) {
-                            val progress = ((downloaded * 100) / totalBytes).toInt()
-                            onProgress(progress)
+                            val progress = ((downloaded.toDouble() / totalBytes.toDouble()) * 100).toInt()
+                            
+                            val currentTime = System.currentTimeMillis()
+                            if (progress != lastProgress || currentTime - lastLogTime > 5000) {
+                                lastProgress = progress
+                                lastLogTime = currentTime
+                                android.util.Log.d("ModelDownloader", "Downloaded: $downloaded / $totalBytes bytes ($progress%)")
+                                withContext(Dispatchers.Main) {
+                                    onProgress(progress)
+                                }
+                            }
                         }
                     }
                 }

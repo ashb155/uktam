@@ -19,6 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.background
 
 class MainActivity : ComponentActivity() {
 
@@ -29,22 +36,30 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            val isModelReady by viewModel.isModelReady.collectAsState()
+            val isModelDownloaded by viewModel.isModelDownloaded.collectAsState()
+            
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AsrScreen(
-                        viewModel = viewModel,
-                        audioCapturer = audioCapturer,
-                        onTtsMissing = { lang ->
-                            Toast.makeText(this@MainActivity, "Please install $lang TTS voice data.", Toast.LENGTH_LONG).show()
-                            val installIntent = Intent()
-                            installIntent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
-                            try {
-                                startActivity(installIntent)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                    if (!isModelDownloaded) {
+                        DownloadScreen(viewModel = viewModel)
+                    } else {
+                        AsrScreen(
+                            viewModel = viewModel,
+                            audioCapturer = audioCapturer,
+                            isModelReady = isModelReady,
+                            onTtsMissing = { lang ->
+                                Toast.makeText(this@MainActivity, "Please install $lang TTS voice data.", Toast.LENGTH_LONG).show()
+                                val installIntent = Intent()
+                                installIntent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
+                                try {
+                                    startActivity(installIntent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -55,6 +70,7 @@ class MainActivity : ComponentActivity() {
 fun AsrScreen(
     viewModel: TranslationViewModel,
     audioCapturer: AudioCapturer,
+    isModelReady: Boolean,
     onTtsMissing: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -137,10 +153,77 @@ fun AsrScreen(
                     }
                 }
             },
-            modifier = Modifier.size(120.dp),
-            enabled = !isTranslating
+            enabled = isModelReady && !isTranslating,
+            modifier = Modifier.size(120.dp)
         ) {
             Text(if (isRecording) "Stop" else "Record")
+        }
+        
+        if (!isModelReady) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Initializing AI Engine...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+fun DownloadScreen(viewModel: TranslationViewModel) {
+    val progress by viewModel.downloadProgress.collectAsState()
+    val isModelReady by viewModel.isModelReady.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { progress / 100f },
+                    modifier = Modifier.size(160.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 8.dp,
+                    trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                )
+                
+                Text(
+                    text = "$progress%",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            Text(
+                text = if (progress < 100) "Downloading Translation Core" else "Initializing Engine",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                ),
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "This 2.3 GB offline model is downloaded only once.\nPlease keep the app open.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                ),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

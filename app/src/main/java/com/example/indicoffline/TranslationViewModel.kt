@@ -19,6 +19,15 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private var tts: TextToSpeech? = null
     private var isTtsReady = false
 
+    private val _isModelReady = MutableStateFlow(false)
+    val isModelReady: StateFlow<Boolean> = _isModelReady.asStateFlow()
+
+    private val _downloadProgress = MutableStateFlow(0)
+    val downloadProgress: StateFlow<Int> = _downloadProgress.asStateFlow()
+
+    private val _isModelDownloaded = MutableStateFlow(false)
+    val isModelDownloaded: StateFlow<Boolean> = _isModelDownloaded.asStateFlow()
+
     private val _srcLang = MutableStateFlow("hi")
     val srcLang: StateFlow<String> = _srcLang.asStateFlow()
 
@@ -48,15 +57,25 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             asrEngine.loadLanguage("hi")
             
             val appCtx = getApplication<Application>()
-            if (!ModelDownloader.isModelDownloaded(appCtx)) {
+            val downloadedInitially = ModelDownloader.isModelDownloaded(appCtx)
+            _isModelDownloaded.value = downloadedInitially
+            
+            if (!downloadedInitially) {
                 android.util.Log.d("LlamaTest", "Downloading model...")
                 ModelDownloader.downloadModel(appCtx) { progress ->
                     android.util.Log.d("LlamaTest", "Download progress: $progress%")
+                    _downloadProgress.value = progress
                 }
+                _isModelDownloaded.value = true
+            } else {
+                _downloadProgress.value = 100
             }
             val modelPath = ModelDownloader.getModelFile(appCtx).absolutePath
             llamaCtx = LlamaWrapper.loadModel(modelPath)
             android.util.Log.d("LlamaTest", if (llamaCtx != 0L) "Model loaded" else "Model load FAILED")
+            if (llamaCtx != 0L) {
+                _isModelReady.value = true
+            }
         }
     }
 
