@@ -10,6 +10,8 @@ android {
     androidResources {
         noCompress.add("onnx")
     }
+    
+    assetPacks += listOf(":asr_assets")
 
     defaultConfig {
         applicationId = "com.example.indicoffline"

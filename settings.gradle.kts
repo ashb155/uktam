@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "indicoffline"
 include(":app")
+include(":asr_assets")
