@@ -25,7 +25,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _downloadProgress = MutableStateFlow(0)
     val downloadProgress: StateFlow<Int> = _downloadProgress.asStateFlow()
 
-    private val _isModelDownloaded = MutableStateFlow(false)
+    private val _isModelDownloaded = MutableStateFlow(ModelDownloader.isModelDownloaded(application))
     val isModelDownloaded: StateFlow<Boolean> = _isModelDownloaded.asStateFlow()
 
     private val _srcLang = MutableStateFlow("hi")
@@ -57,8 +57,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             asrEngine.loadLanguage("hi")
             
             val appCtx = getApplication<Application>()
-            val downloadedInitially = ModelDownloader.isModelDownloaded(appCtx)
-            _isModelDownloaded.value = downloadedInitially
+            val downloadedInitially = _isModelDownloaded.value
             
             if (!downloadedInitially) {
                 android.util.Log.d("LlamaTest", "Downloading model...")

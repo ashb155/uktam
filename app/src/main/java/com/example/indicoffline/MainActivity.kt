@@ -207,7 +207,7 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
             Spacer(modifier = Modifier.height(48.dp))
             
             Text(
-                text = if (progress < 100) "Downloading Translation Core" else "Initializing Engine",
+                text = if (progress < 100) "Setting up Offline AI" else "Finalizing...",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -218,7 +218,7 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "This 2.3 GB offline model is downloaded only once.\nPlease keep the app open.",
+                text = "Downloading the language intelligence so you can translate without internet. This is a one-time process, please keep the app open.",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 ),
