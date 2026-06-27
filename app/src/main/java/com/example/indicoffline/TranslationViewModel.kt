@@ -42,6 +42,13 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         _isDarkMode.value = isDark
     }
 
+    private val _isHapticsEnabled = MutableStateFlow(true)
+    val isHapticsEnabled: StateFlow<Boolean> = _isHapticsEnabled.asStateFlow()
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        _isHapticsEnabled.value = enabled
+    }
+
     private val _srcLang = MutableStateFlow("hi")
     val srcLang: StateFlow<String> = _srcLang.asStateFlow()
     
@@ -108,6 +115,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun stopRecordingAndProcess(audioCapturer: AudioCapturer, onTtsMissing: (String) -> Unit) {
         _isRecording.value = false
+        _isTranslating.value = true
         _transcription.value = "Processing..."
         
         viewModelScope.launch(Dispatchers.IO) {
@@ -120,7 +128,6 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             }
             
             if (resultText.isNotEmpty()) {
-                withContext(Dispatchers.Main) { _isTranslating.value = true }
                 val translated = translate(resultText, _srcLang.value, targetLang)
                 android.util.Log.d("LlamaTest", "Translation: '$translated'")
                 
@@ -136,6 +143,12 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
                     _conversationHistory.value = _conversationHistory.value + newMessage
                     
                     speak(translated, targetLang, onTtsMissing)
+                }
+            } else {
+                kotlinx.coroutines.delay(1500)
+                withContext(Dispatchers.Main) {
+                    _isTranslating.value = false
+                    _transcription.value = ""
                 }
             }
         }

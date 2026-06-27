@@ -12,6 +12,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -48,6 +50,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -55,6 +58,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -112,6 +116,8 @@ fun AsrScreen(
     onTtsMissing: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
     val srcLang by viewModel.srcLang.collectAsState()
     val transcription by viewModel.transcription.collectAsState()
     val conversationHistory by viewModel.conversationHistory.collectAsState()
@@ -209,7 +215,7 @@ fun AsrScreen(
                     
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        color = if (srcLang == "kn") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        color = if (srcLang == "kn") MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
@@ -219,7 +225,7 @@ fun AsrScreen(
                             ),
                             modifier = Modifier.padding(vertical = 12.dp),
                             textAlign = TextAlign.Center,
-                            color = if (srcLang == "kn") MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (srcLang == "kn") MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -276,8 +282,12 @@ fun AsrScreen(
                 }
             }
 
-            if (isRecording || isTranslating) {
-                item {
+            item {
+                AnimatedVisibility(
+                    visible = isRecording || isTranslating,
+                    enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                    exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+                ) {
                     val isHindi = srcLang == "hi"
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -296,7 +306,7 @@ fun AsrScreen(
                                 )
                                 
                                 AnimatedVisibility(
-                                    visible = isTranslating && transcription.isNotEmpty(),
+                                    visible = isTranslating && transcription.isNotEmpty() && transcription != "Processing..." && transcription != "No speech detected.",
                                     enter = fadeIn(tween(300)) + expandVertically(tween(300)),
                                     exit = fadeOut(tween(200)) + shrinkVertically(tween(200))
                                 ) {
@@ -330,6 +340,10 @@ fun AsrScreen(
                 FloatingActionButton(
                     onClick = {
                         if (!isButtonEnabled) return@FloatingActionButton
+                        
+                        if (isHapticsEnabled) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
                         
                         if (!hasMicPermission) {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -434,8 +448,12 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
 }
 
 @Composable
-fun SettingsScreen(onNavigateBack: () -> Unit) {
+fun SettingsScreen(
+    viewModel: TranslationViewModel,
+    onNavigateBack: () -> Unit
+) {
     val context = LocalContext.current
+    val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
     
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
         Surface(
@@ -509,6 +527,50 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Preferences",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+            )
+            
+            Surface(
+                onClick = { viewModel.setHapticsEnabled(!isHapticsEnabled) },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.TouchApp,
+                        contentDescription = "Haptics",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Haptic Feedback",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Vibrate on mic press",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                    Switch(
+                        checked = isHapticsEnabled,
+                        onCheckedChange = { viewModel.setHapticsEnabled(it) }
+                    )
                 }
             }
         }
