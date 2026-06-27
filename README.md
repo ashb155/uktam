@@ -5,7 +5,7 @@ IndicOffline is a powerful, entirely offline Android application for real-time s
 ## Why IndicOffline?
 * **100% Offline & Private:** No audio recordings or text transcripts ever leave your device. Every single piece of processing—from speech recognition to large language model (LLM) translation—happens locally on your smartphone's silicon.
 * **Made for India, by Indian AI:** Instead of relying on generic global models, IndicOffline is strictly built around models researched and trained specifically for Indian languages. By utilizing **Sarvam AI** and **AI4Bharat**, the app captures the nuances, dialects, and grammatical complexities of languages far better than generic cloud APIs.
-* **Quantized for Mobile:** Running multi-billion parameter AI models on a phone requires immense compute. IndicOffline uses highly optimized and heavily quantized (GGUF/ONNX) versions of these big models, drastically reducing memory footprint and battery consumption while maintaining near-perfect accuracy.
+* **Custom Quantized for Mobile:** Running multi-billion parameter AI models on a phone requires immense compute. IndicOffline uses models that were **custom-quantized** (GGUF/ONNX) specifically for this project. This hands-on optimization drastically reduces the memory footprint and battery consumption, allowing them to run smoothly on standard smartphone hardware while maintaining near-perfect accuracy.
 * **Zero Latency / No Internet Required:** Perfect for remote areas, low-connectivity zones, or traveling. Once the models are downloaded, you never need Wi-Fi or mobile data to translate again.
 
 ## Key Features
