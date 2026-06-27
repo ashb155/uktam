@@ -1,7 +1,11 @@
 package com.example.indicoffline
 
 import android.content.res.AssetManager
-import com.k2fsa.sherpa.onnx.*
+import com.k2fsa.sherpa.onnx.FeatureConfig
+import com.k2fsa.sherpa.onnx.OfflineModelConfig
+import com.k2fsa.sherpa.onnx.OfflineNemoEncDecCtcModelConfig
+import com.k2fsa.sherpa.onnx.OfflineRecognizer
+import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 
 class IndicAsrEngine(private val assetManager: AssetManager) {
     private var recognizer: OfflineRecognizer? = null
