@@ -25,6 +25,13 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
+        
+        externalNativeBuild {
+            cmake {
+                arguments += "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+                arguments += "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+            }
+        }
     }
 
     externalNativeBuild {
