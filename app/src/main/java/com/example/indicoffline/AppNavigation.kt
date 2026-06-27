@@ -4,9 +4,12 @@ import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.indicoffline.ui.theme.IndicofflineTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
@@ -23,7 +26,11 @@ fun AppNavigation(
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    MaterialTheme {
+    val isDarkModePref by viewModel.isDarkMode.collectAsState()
+    val systemDarkTheme = isSystemInDarkTheme()
+    val isDarkMode = isDarkModePref ?: systemDarkTheme
+
+    IndicofflineTheme(darkTheme = isDarkMode) {
         Surface(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,

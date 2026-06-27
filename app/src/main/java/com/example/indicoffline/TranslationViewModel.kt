@@ -35,6 +35,13 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _isModelDownloaded = MutableStateFlow(ModelDownloader.isModelDownloaded(application))
     val isModelDownloaded: StateFlow<Boolean> = _isModelDownloaded.asStateFlow()
 
+    private val _isDarkMode = MutableStateFlow<Boolean?>(null)
+    val isDarkMode: StateFlow<Boolean?> = _isDarkMode.asStateFlow()
+
+    fun setDarkMode(isDark: Boolean) {
+        _isDarkMode.value = isDark
+    }
+
     private val _srcLang = MutableStateFlow("hi")
     val srcLang: StateFlow<String> = _srcLang.asStateFlow()
     

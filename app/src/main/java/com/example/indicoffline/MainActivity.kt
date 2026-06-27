@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -55,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -141,7 +144,7 @@ fun AsrScreen(
         ) {
             Column {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -150,12 +153,26 @@ fun AsrScreen(
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+                    
+                    Row {
+                        val isDarkModePref by viewModel.isDarkMode.collectAsState()
+                        val systemDarkTheme = isSystemInDarkTheme()
+                        val isDarkMode = isDarkModePref ?: systemDarkTheme
+                        
+                        IconButton(onClick = { viewModel.setDarkMode(!isDarkMode) }) {
+                            Icon(
+                                imageVector = if (isDarkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                contentDescription = "Toggle Dark Mode",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     }
                 }
                 Row(
@@ -304,13 +321,15 @@ fun AsrScreen(
         }
 
         Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val isButtonEnabled = isModelReady && !isTranslating
+                
                 FloatingActionButton(
                     onClick = {
-                        if (!isModelReady || isTranslating) return@FloatingActionButton
+                        if (!isButtonEnabled) return@FloatingActionButton
                         
                         if (!hasMicPermission) {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -322,14 +341,16 @@ fun AsrScreen(
                             }
                         }
                     },
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier
+                        .size(80.dp)
+                        .alpha(if (isButtonEnabled) 1f else 0.5f),
                     containerColor = when {
-                        !isModelReady || isTranslating -> MaterialTheme.colorScheme.surfaceVariant
+                        !isButtonEnabled -> MaterialTheme.colorScheme.surfaceVariant
                         isRecording -> MaterialTheme.colorScheme.error
                         else -> MaterialTheme.colorScheme.primary
                     },
                     contentColor = when {
-                        !isModelReady || isTranslating -> MaterialTheme.colorScheme.onSurfaceVariant
+                        !isButtonEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
                         isRecording -> MaterialTheme.colorScheme.onError
                         else -> MaterialTheme.colorScheme.onPrimary
                     },
