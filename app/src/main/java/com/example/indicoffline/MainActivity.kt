@@ -39,7 +39,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VolumeUp
@@ -77,33 +80,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+
         setContent {
             val isModelReady by viewModel.isModelReady.collectAsState()
             val isModelDownloaded by viewModel.isModelDownloaded.collectAsState()
             
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    if (!isModelDownloaded) {
-                        DownloadScreen(viewModel = viewModel)
-                    } else {
-                        AsrScreen(
-                            viewModel = viewModel,
-                            audioCapturer = audioCapturer,
-                            isModelReady = isModelReady,
-                            onTtsMissing = { lang ->
-                                Toast.makeText(this@MainActivity, "Please install $lang TTS voice data.", Toast.LENGTH_LONG).show()
-                                val installIntent = Intent()
-                                installIntent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
-                                try {
-                                    startActivity(installIntent)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }
-                        )
-                    }
-                }
-            }
+            AppNavigation(
+                viewModel = viewModel,
+                audioCapturer = audioCapturer,
+                isModelDownloaded = isModelDownloaded,
+                isModelReady = isModelReady
+            )
         }
     }
 }
@@ -113,6 +105,7 @@ fun AsrScreen(
     viewModel: TranslationViewModel,
     audioCapturer: AudioCapturer,
     isModelReady: Boolean,
+    onNavigateToSettings: () -> Unit,
     onTtsMissing: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -147,6 +140,24 @@ fun AsrScreen(
             color = MaterialTheme.colorScheme.background,
         ) {
             Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "IndicOffline",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -397,6 +408,88 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
                 ),
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen(onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
+    
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
+        
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+        
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Text-to-Speech (TTS)",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+            )
+            
+            Surface(
+                onClick = {
+                    val intent = Intent()
+                    intent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
+                    intent.setPackage("com.google.android.tts")
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Cannot open TTS settings", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Download,
+                        contentDescription = "TTS",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Install TTS Voice Data",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Download voices for offline playback",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
         }
     }
 }
