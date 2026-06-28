@@ -119,6 +119,8 @@ fun AsrScreen(
     val haptic = LocalHapticFeedback.current
     val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
     val srcLang by viewModel.srcLang.collectAsState()
+    val primaryLang by viewModel.primaryLang.collectAsState()
+    val secondaryLang by viewModel.secondaryLang.collectAsState()
     val transcription by viewModel.transcription.collectAsState()
     val conversationHistory by viewModel.conversationHistory.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
@@ -190,22 +192,22 @@ fun AsrScreen(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        color = if (srcLang == "hi") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        color = if (srcLang == primaryLang) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Hindi",
+                            text = viewModel.getLanguageName(primaryLang),
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = if (srcLang == "hi") FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (srcLang == primaryLang) FontWeight.Bold else FontWeight.Medium
                             ),
                             modifier = Modifier.padding(vertical = 12.dp),
                             textAlign = TextAlign.Center,
-                            color = if (srcLang == "hi") MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (srcLang == primaryLang) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                     
                     IconButton(
-                        onClick = { viewModel.switchLanguage(if (srcLang == "hi") "kn" else "hi") },
+                        onClick = { viewModel.switchLanguage(if (srcLang == primaryLang) secondaryLang else primaryLang) },
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Icon(
@@ -217,17 +219,17 @@ fun AsrScreen(
                     
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        color = if (srcLang == "kn") MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                        color = if (srcLang == secondaryLang) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Kannada",
+                            text = viewModel.getLanguageName(secondaryLang),
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = if (srcLang == "kn") FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (srcLang == secondaryLang) FontWeight.Bold else FontWeight.Medium
                             ),
                             modifier = Modifier.padding(vertical = 12.dp),
                             textAlign = TextAlign.Center,
-                            color = if (srcLang == "kn") MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (srcLang == secondaryLang) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -242,13 +244,13 @@ fun AsrScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(conversationHistory) { message ->
-                val isHindi = message.speakerLang == "hi"
+                val isPrimary = message.speakerLang == primaryLang
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = if (isHindi) Arrangement.Start else Arrangement.End
+                    horizontalArrangement = if (isPrimary) Arrangement.Start else Arrangement.End
                 ) {
                     Surface(
-                        color = if (isHindi) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                        color = if (isPrimary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(0.85f)
                     ) {
@@ -256,13 +258,13 @@ fun AsrScreen(
                             Text(
                                 text = message.originalText,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                                color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = message.translatedText,
                                 style = MaterialTheme.typography.titleLarge,
-                                color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                             )
                             
                             if (showNerdStats) {
@@ -270,21 +272,21 @@ fun AsrScreen(
                                 Text(
                                     text = "ASR: ${message.transcriptionTimeMs}ms | Translation ${message.translationTimeMs / 1000.0}s",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = (if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer).copy(alpha = 0.5f)
+                                    color = (if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer).copy(alpha = 0.5f)
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                val targetLanguage = if (isHindi) "Kannada" else "Hindi"
+                                val targetLangCode = if (isPrimary) secondaryLang else primaryLang
                                 IconButton(
-                                    onClick = { viewModel.speakTranslation(message.translatedText, targetLanguage, onTtsMissing) },
-                                    modifier = Modifier.size(32.dp).background(if (isHindi) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(50))
+                                    onClick = { viewModel.speakTranslation(message.translatedText, targetLangCode, onTtsMissing) },
+                                    modifier = Modifier.size(32.dp).background(if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(50))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.VolumeUp,
                                         contentDescription = "Speak",
-                                        tint = if (isHindi) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
+                                        tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -300,13 +302,13 @@ fun AsrScreen(
                     enter = fadeIn(tween(300)) + expandVertically(tween(300)),
                     exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
                 ) {
-                    val isHindi = srcLang == "hi"
+                    val isPrimary = srcLang == primaryLang
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (isHindi) Arrangement.Start else Arrangement.End
+                        horizontalArrangement = if (isPrimary) Arrangement.Start else Arrangement.End
                     ) {
                         Surface(
-                            color = if (isHindi) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                            color = if (isPrimary) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth(0.85f).animateContentSize(animationSpec = tween(300, easing = LinearOutSlowInEasing))
                         ) {
@@ -314,7 +316,7 @@ fun AsrScreen(
                                 Text(
                                     text = transcription,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                    color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 
                                 AnimatedVisibility(
@@ -325,12 +327,12 @@ fun AsrScreen(
                                     Column {
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer)
+                                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer)
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = "Translating...",
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                                color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
                                     }

@@ -1,6 +1,8 @@
 package com.example.indicoffline
 
 import android.app.Application
+import android.content.Context
+import android.content.SharedPreferences
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,6 +25,8 @@ data class ConversationMessage(
 
 class TranslationViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val prefs: SharedPreferences = application.getSharedPreferences("indic_offline_prefs", Context.MODE_PRIVATE)
+
     private val asrEngine = IndicAsrEngine(application.assets)
     private var llamaCtx: Long = 0L
     private var tts: TextToSpeech? = null
@@ -37,25 +41,30 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _isModelDownloaded = MutableStateFlow(ModelDownloader.isModelDownloaded(application))
     val isModelDownloaded: StateFlow<Boolean> = _isModelDownloaded.asStateFlow()
 
-    private val _isDarkMode = MutableStateFlow<Boolean?>(null)
+    private val _isDarkMode = MutableStateFlow<Boolean?>(
+        if (prefs.contains("is_dark_mode")) prefs.getBoolean("is_dark_mode", false) else null
+    )
     val isDarkMode: StateFlow<Boolean?> = _isDarkMode.asStateFlow()
 
     fun setDarkMode(isDark: Boolean) {
         _isDarkMode.value = isDark
+        prefs.edit().putBoolean("is_dark_mode", isDark).apply()
     }
 
-    private val _isHapticsEnabled = MutableStateFlow(true)
+    private val _isHapticsEnabled = MutableStateFlow(prefs.getBoolean("is_haptics_enabled", true))
     val isHapticsEnabled: StateFlow<Boolean> = _isHapticsEnabled.asStateFlow()
 
     fun setHapticsEnabled(enabled: Boolean) {
         _isHapticsEnabled.value = enabled
+        prefs.edit().putBoolean("is_haptics_enabled", enabled).apply()
     }
 
-    private val _showNerdStats = MutableStateFlow(false)
+    private val _showNerdStats = MutableStateFlow(prefs.getBoolean("show_nerd_stats", false))
     val showNerdStats: StateFlow<Boolean> = _showNerdStats.asStateFlow()
 
     fun setShowNerdStats(enabled: Boolean) {
         _showNerdStats.value = enabled
+        prefs.edit().putBoolean("show_nerd_stats", enabled).apply()
     }
 
     private val _srcLang = MutableStateFlow("hi")
@@ -73,8 +82,22 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _isTranslating = MutableStateFlow(false)
     val isTranslating: StateFlow<Boolean> = _isTranslating.asStateFlow()
 
+    private val _primaryLang = MutableStateFlow("hi")
+    val primaryLang: StateFlow<String> = _primaryLang.asStateFlow()
+
+    private val _secondaryLang = MutableStateFlow("kn")
+    val secondaryLang: StateFlow<String> = _secondaryLang.asStateFlow()
+
     val targetLang: String
-        get() = if (_srcLang.value == "hi") "Kannada" else "Hindi"
+        get() = if (_srcLang.value == _primaryLang.value) _secondaryLang.value else _primaryLang.value
+        
+    fun getLanguageName(code: String): String {
+        return when (code) {
+            "hi" -> "Hindi"
+            "kn" -> "Kannada"
+            else -> "Unknown"
+        }
+    }
 
     init {
         tts = TextToSpeech(application) { status ->
@@ -140,7 +163,8 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             
             if (resultText.isNotEmpty()) {
                 val transStart = System.currentTimeMillis()
-                val translated = translate(resultText, _srcLang.value, targetLang)
+                val targetLangCode = targetLang
+                val translated = translate(resultText, _srcLang.value, targetLangCode)
                 val transTime = System.currentTimeMillis() - transStart
                 android.util.Log.d("LlamaTest", "Translation: '$translated'")
                 
@@ -157,7 +181,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
                     )
                     _conversationHistory.value += newMessage
                     
-                    speak(translated, targetLang, onTtsMissing)
+                    speak(translated, targetLangCode, onTtsMissing)
                 }
             } else {
                 kotlinx.coroutines.delay(1500)
@@ -169,17 +193,17 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun speakTranslation(text: String, targetLanguage: String, onTtsMissing: (String) -> Unit) {
-        speak(text, targetLanguage, onTtsMissing)
+    fun speakTranslation(text: String, targetLangCode: String, onTtsMissing: (String) -> Unit) {
+        speak(text, targetLangCode, onTtsMissing)
     }
 
-    private fun speak(text: String, targetLang: String, onTtsMissing: (String) -> Unit) {
+    private fun speak(text: String, targetLangCode: String, onTtsMissing: (String) -> Unit) {
         if (!isTtsReady || tts == null) return
-        val locale = if (targetLang == "Hindi") Locale("hi", "IN") else Locale("kn", "IN")
+        val locale = if (targetLangCode == "hi") Locale("hi", "IN") else Locale("kn", "IN")
         val result = tts?.setLanguage(locale)
 
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            onTtsMissing(targetLang)
+            onTtsMissing(getLanguageName(targetLangCode))
             return
         }
 
@@ -193,7 +217,8 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             val englishBridge = LlamaWrapper.completion(llamaCtx, toEnglishPrompt).trim()
             android.util.Log.d("LlamaTest", "English bridge: '$englishBridge'")
 
-            val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the text below to $targetLang.\n\n$englishBridge<end_of_turn>\n<start_of_turn>model\n"
+            val targetLangName = getLanguageName(targetLang)
+            val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the text below to $targetLangName.\n\n$englishBridge<end_of_turn>\n<start_of_turn>model\n"
             val finalTranslation = LlamaWrapper.completion(llamaCtx, toTargetPrompt).trim()
             
             android.util.Log.d("LlamaTest", "Translation ($srcLang -> English -> $targetLang): '$finalTranslation'")
