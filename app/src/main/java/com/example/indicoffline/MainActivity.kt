@@ -48,7 +48,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
@@ -278,11 +278,32 @@ fun AsrScreen(
                                 color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = message.translatedText,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = message.translatedText,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                
+                                Spacer(modifier = Modifier.width(6.dp))
+                                val targetLangCode = if (isPrimary) secondaryLang else primaryLang
+                                IconButton(
+                                    onClick = { viewModel.speakTranslation(message.translatedText, targetLangCode, onTtsMissing) },
+                                    modifier = Modifier.size(28.dp).background(if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(50))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                        contentDescription = "Speak",
+                                        tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
                             
                             if (showNerdStats) {
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -291,22 +312,6 @@ fun AsrScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = (if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer).copy(alpha = 0.5f)
                                 )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                val targetLangCode = if (isPrimary) secondaryLang else primaryLang
-                                IconButton(
-                                    onClick = { viewModel.speakTranslation(message.translatedText, targetLangCode, onTtsMissing) },
-                                    modifier = Modifier.size(32.dp).background(if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(50))
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.VolumeUp,
-                                        contentDescription = "Speak",
-                                        tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
                             }
                         }
                     }
