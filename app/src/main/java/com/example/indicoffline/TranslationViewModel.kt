@@ -16,7 +16,9 @@ data class ConversationMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val originalText: String,
     val translatedText: String,
-    val speakerLang: String
+    val speakerLang: String,
+    val transcriptionTimeMs: Long = 0L,
+    val translationTimeMs: Long = 0L
 )
 
 class TranslationViewModel(application: Application) : AndroidViewModel(application) {
@@ -47,6 +49,13 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setHapticsEnabled(enabled: Boolean) {
         _isHapticsEnabled.value = enabled
+    }
+
+    private val _showNerdStats = MutableStateFlow(false)
+    val showNerdStats: StateFlow<Boolean> = _showNerdStats.asStateFlow()
+
+    fun setShowNerdStats(enabled: Boolean) {
+        _showNerdStats.value = enabled
     }
 
     private val _srcLang = MutableStateFlow("hi")
@@ -120,7 +129,9 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         
         viewModelScope.launch(Dispatchers.IO) {
             val audioData = audioCapturer.stopAndGetFloatArray()
+            val asrStart = System.currentTimeMillis()
             val resultText = asrEngine.transcribe(audioData)
+            val asrTime = System.currentTimeMillis() - asrStart
             android.util.Log.d("LlamaTest", "Transcription: '$resultText'")
             
             withContext(Dispatchers.Main) {
@@ -128,7 +139,9 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             }
             
             if (resultText.isNotEmpty()) {
+                val transStart = System.currentTimeMillis()
                 val translated = translate(resultText, _srcLang.value, targetLang)
+                val transTime = System.currentTimeMillis() - transStart
                 android.util.Log.d("LlamaTest", "Translation: '$translated'")
                 
                 withContext(Dispatchers.Main) {
@@ -138,9 +151,11 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
                     val newMessage = ConversationMessage(
                         originalText = resultText,
                         translatedText = translated,
-                        speakerLang = _srcLang.value
+                        speakerLang = _srcLang.value,
+                        transcriptionTimeMs = asrTime,
+                        translationTimeMs = transTime
                     )
-                    _conversationHistory.value = _conversationHistory.value + newMessage
+                    _conversationHistory.value += newMessage
                     
                     speak(translated, targetLang, onTtsMissing)
                 }

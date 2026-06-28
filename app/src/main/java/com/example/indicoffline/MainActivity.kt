@@ -123,13 +123,15 @@ fun AsrScreen(
     val conversationHistory by viewModel.conversationHistory.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
     val isTranslating by viewModel.isTranslating.collectAsState()
+    val showNerdStats by viewModel.showNerdStats.collectAsState()
     
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(conversationHistory.size) {
-        if (conversationHistory.isNotEmpty()) {
-            listState.animateScrollToItem(conversationHistory.size - 1)
+    LaunchedEffect(conversationHistory.size, isRecording, isTranslating) {
+        val targetIndex = if (isRecording || isTranslating) conversationHistory.size else conversationHistory.size - 1
+        if (targetIndex >= 0) {
+            listState.animateScrollToItem(targetIndex)
         }
     }
 
@@ -236,7 +238,7 @@ fun AsrScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(conversationHistory) { message ->
@@ -253,7 +255,7 @@ fun AsrScreen(
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = message.originalText,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -262,6 +264,16 @@ fun AsrScreen(
                                 style = MaterialTheme.typography.titleLarge,
                                 color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                             )
+                            
+                            if (showNerdStats) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "ASR: ${message.transcriptionTimeMs}ms | Translation ${message.translationTimeMs / 1000.0}s",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = (if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer).copy(alpha = 0.5f)
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 val targetLanguage = if (isHindi) "Kannada" else "Hindi"
@@ -301,7 +313,7 @@ fun AsrScreen(
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
                                     text = transcription,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.titleMedium,
                                     color = if (isHindi) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 
@@ -454,6 +466,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
+    val showNerdStats by viewModel.showNerdStats.collectAsState()
     
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
         Surface(
@@ -570,6 +583,41 @@ fun SettingsScreen(
                     Switch(
                         checked = isHapticsEnabled,
                         onCheckedChange = { viewModel.setHapticsEnabled(it) }
+                    )
+                }
+            }
+            
+            Surface(
+                onClick = { viewModel.setShowNerdStats(!showNerdStats) },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Nerd Stats",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable Performance Stats",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Show AI inference latency",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                    Switch(
+                        checked = showNerdStats,
+                        onCheckedChange = { viewModel.setShowNerdStats(it) }
                     )
                 }
             }
