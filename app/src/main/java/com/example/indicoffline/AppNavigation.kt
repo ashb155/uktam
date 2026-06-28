@@ -67,6 +67,12 @@ fun AppNavigation(
                 }
                 composable("about") {
                     AboutScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToLicenses = { navController.navigate("licenses") }
+                    )
+                }
+                composable("licenses") {
+                    LicensesScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
