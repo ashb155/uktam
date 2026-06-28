@@ -45,6 +45,7 @@ fun AppNavigation(
                         audioCapturer = audioCapturer,
                         isModelReady = isModelReady,
                         onNavigateToSettings = { navController.navigate("settings") },
+                        onNavigateToAbout = { navController.navigate("about") },
                         onTtsMissing = { lang ->
                             Toast.makeText(context, "Please install $lang TTS voice data.", Toast.LENGTH_LONG).show()
                             val installIntent = Intent()
@@ -61,6 +62,11 @@ fun AppNavigation(
                 composable("settings") {
                     SettingsScreen(
                         viewModel = viewModel,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable("about") {
+                    AboutScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

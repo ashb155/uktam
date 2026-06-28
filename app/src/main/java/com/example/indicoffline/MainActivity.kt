@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TouchApp
@@ -62,6 +63,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
@@ -72,9 +74,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -115,6 +120,7 @@ fun AsrScreen(
     audioCapturer: AudioCapturer,
     isModelReady: Boolean,
     onNavigateToSettings: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     onTtsMissing: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -175,6 +181,13 @@ fun AsrScreen(
                             Icon(
                                 imageVector = if (isDarkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
                                 contentDescription = "Toggle Dark Mode",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        IconButton(onClick = onNavigateToAbout) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = "About",
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
@@ -464,22 +477,17 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
 }
 
 @Composable
-fun SettingsScreen(
-    viewModel: TranslationViewModel,
-    onNavigateBack: () -> Unit
-) {
-    val context = LocalContext.current
-    val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
-    val showNerdStats by viewModel.showNerdStats.collectAsState()
-    val ttsSpeechSpeed by viewModel.ttsSpeechSpeed.collectAsState()
-    
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
+fun AboutScreen(onNavigateBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+    ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.background,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -489,60 +497,77 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Settings",
+                    text = "About",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
         }
-        
-        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-        
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Text-to-Speech (TTS)",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Info,
+                contentDescription = "About Logo",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(64.dp).padding(bottom = 16.dp)
             )
-            
+
+            Text(
+                text = "IndicOffline",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Text(
+                text = "Version 1.0.0",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
             Surface(
-                onClick = {
-                    val intent = Intent()
-                    intent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
-                    intent.setPackage("com.google.android.tts")
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Cannot open TTS settings", Toast.LENGTH_SHORT).show()
-                    }
-                },
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Download,
-                        contentDescription = "TTS",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "Install TTS Voice Data",
+                            text = "Built by",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Ashutosh Bhat",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Download voices for offline playback",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            text = "Follow me",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        val uriHandler = LocalUriHandler.current
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_github),
+                            contentDescription = "GitHub",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .clickable { uriHandler.openUri("https://github.com/ashb155") }
                         )
                     }
                 }
@@ -554,117 +579,229 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Powered by AI & Open Source",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "• Sarvam Translate for translation\n• AI4Bharat Indic Conformer for ASR\n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+    @Composable
+    fun SettingsScreen(
+        viewModel: TranslationViewModel,
+        onNavigateBack: () -> Unit
+    ) {
+        val context = LocalContext.current
+        val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
+        val showNerdStats by viewModel.showNerdStats.collectAsState()
+        val ttsSpeechSpeed by viewModel.ttsSpeechSpeed.collectAsState()
+
+        Column(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                .systemBarsPadding()
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Filled.Speed,
-                            contentDescription = "Speech Speed",
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Settings",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Text-to-Speech (TTS)",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+                )
+
+                Surface(
+                    onClick = {
+                        val intent = Intent()
+                        intent.action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA
+                        intent.setPackage("com.google.android.tts")
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Cannot open TTS settings", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Download,
+                            contentDescription = "TTS",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Speech Speed",
+                                text = "Install TTS Voice Data",
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = String.format("%.1fx", ttsSpeechSpeed),
+                                text = "Download voices for offline playback",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Slider(
-                        value = ttsSpeechSpeed,
-                        onValueChange = { viewModel.setTtsSpeechSpeed(it) },
-                        valueRange = 0.5f..2.0f,
-                        steps = 14,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "Preferences",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
-            )
-            
-            Surface(
-                onClick = { viewModel.setHapticsEnabled(!isHapticsEnabled) },
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.TouchApp,
-                        contentDescription = "Haptics",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Haptic Feedback",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Vibrate on mic press",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Speed,
+                                contentDescription = "Speech Speed",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = "Speech Speed",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = String.format("%.1fx", ttsSpeechSpeed),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Slider(
+                            value = ttsSpeechSpeed,
+                            onValueChange = { viewModel.setTtsSpeechSpeed(it) },
+                            valueRange = 0.5f..2.0f,
+                            steps = 14,
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
-                    Switch(
-                        checked = isHapticsEnabled,
-                        onCheckedChange = { viewModel.setHapticsEnabled(it) }
-                    )
                 }
-            }
-            
-            Surface(
-                onClick = { viewModel.setShowNerdStats(!showNerdStats) },
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Preferences",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+                )
+
+                Surface(
+                    onClick = { viewModel.setHapticsEnabled(!isHapticsEnabled) },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Nerd Stats",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Enable Performance Stats",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.TouchApp,
+                            contentDescription = "Haptics",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(
-                            text = "Show AI inference latency",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Haptic Feedback",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Vibrate on mic press",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                        Switch(
+                            checked = isHapticsEnabled,
+                            onCheckedChange = { viewModel.setHapticsEnabled(it) }
                         )
                     }
-                    Switch(
-                        checked = showNerdStats,
-                        onCheckedChange = { viewModel.setShowNerdStats(it) }
-                    )
                 }
+
+                Surface(
+                    onClick = { viewModel.setShowNerdStats(!showNerdStats) },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Nerd Stats",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Enable Performance Stats",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Show AI inference latency",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                        Switch(
+                            checked = showNerdStats,
+                            onCheckedChange = { viewModel.setShowNerdStats(it) }
+                        )
+                    }
+                }
+
+
             }
-            
-            
         }
     }
-}
