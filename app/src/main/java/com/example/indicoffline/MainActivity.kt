@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -391,19 +392,21 @@ fun AsrScreen(
                             }
                         }
                     },
-                    modifier = Modifier
-                        .size(80.dp)
-                        .alpha(if (isButtonEnabled) 1f else 0.5f),
+                    modifier = Modifier.size(80.dp),
                     containerColor = when {
-                        !isButtonEnabled -> MaterialTheme.colorScheme.surfaceVariant
+                        !isButtonEnabled -> androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.2f)
                         isRecording -> MaterialTheme.colorScheme.error
                         else -> MaterialTheme.colorScheme.primary
                     },
                     contentColor = when {
-                        !isButtonEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                        !isButtonEnabled -> androidx.compose.ui.graphics.Color.Gray
                         isRecording -> MaterialTheme.colorScheme.onError
                         else -> MaterialTheme.colorScheme.onPrimary
                     },
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = if (isButtonEnabled) 6.dp else 0.dp,
+                        pressedElevation = if (isButtonEnabled) 12.dp else 0.dp
+                    ),
                     shape = RoundedCornerShape(50)
                 ) {
                     Icon(
@@ -644,7 +647,7 @@ fun AboutScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Sarvam Translate and AI4Bharat Indic Conformer, custom quantized for your phone \n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
+                        text = "• Sarvam Translate and AI4Bharat Indic Conformer,  custom quantized for your phone \n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -707,7 +710,7 @@ fun LicensesScreen(onNavigateBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    text = "IndicOffline uses the following open-source software:",
+                    text = "IndicOffline is powered by the following open-source technologies, custom-quantized and optimized to run smoothly on standard smartphone hardware:",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
