@@ -67,6 +67,15 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         prefs.edit().putBoolean("show_nerd_stats", enabled).apply()
     }
 
+    private val _ttsSpeechSpeed = MutableStateFlow(prefs.getFloat("tts_speech_speed", 1.0f))
+    val ttsSpeechSpeed: StateFlow<Float> = _ttsSpeechSpeed.asStateFlow()
+
+    fun setTtsSpeechSpeed(speed: Float) {
+        _ttsSpeechSpeed.value = speed
+        prefs.edit().putFloat("tts_speech_speed", speed).apply()
+        tts?.setSpeechRate(speed)
+    }
+
     private val _srcLang = MutableStateFlow("hi")
     val srcLang: StateFlow<String> = _srcLang.asStateFlow()
     
@@ -207,6 +216,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             return
         }
 
+        tts?.setSpeechRate(_ttsSpeechSpeed.value)
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
