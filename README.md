@@ -41,7 +41,7 @@ IndicOffline is a powerful, entirely offline Android application for real-time s
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/IndicOffline.git
+   git clone https://github.com/ashb155/IndicOffline.git
    cd IndicOffline
    ```
 
