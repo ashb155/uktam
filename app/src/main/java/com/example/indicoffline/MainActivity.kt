@@ -58,6 +58,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -406,7 +407,7 @@ fun AsrScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Initializing AI Engine...",
                     style = MaterialTheme.typography.bodyMedium,
@@ -477,7 +478,10 @@ fun DownloadScreen(viewModel: TranslationViewModel) {
 }
 
 @Composable
-fun AboutScreen(onNavigateBack: () -> Unit) {
+fun AboutScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToLicenses: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
@@ -512,6 +516,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val uriHandler = LocalUriHandler.current
             Icon(
                 imageVector = Icons.Filled.Info,
                 contentDescription = "About Logo",
@@ -528,9 +533,16 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             Text(
                 text = "Version 1.0.0",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 32.dp)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
+            Text(
+                text = "Licensed under GPL-3.0",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier=Modifier.padding(8.dp))
+
 
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -560,7 +572,6 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        val uriHandler = LocalUriHandler.current
                         Icon(
                             painter = painterResource(id = R.drawable.ic_github),
                             contentDescription = "GitHub",
@@ -580,18 +591,133 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Powered by AI & Open Source",
+                        text = "Powered by Open Source",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Sarvam Translate for translation\n• AI4Bharat Indic Conformer for ASR\n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
+                        text = "• Sarvam Translate and AI4Bharat Indic Conformer, custom quantized for your phone \n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = "\nCompletely offline & private. Your voice and data never leave this device.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            Text(
+                text = "Open Source Licenses",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .clickable { onNavigateToLicenses() }
+                    .padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LicensesScreen(onNavigateBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Text(
+                    text = "Open Source Licenses",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            item {
+                Text(
+                    text = "IndicOffline uses the following open-source software:",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+            item {
+                LicenseCard(
+                    title = "llama.cpp",
+                    url = "https://github.com/ggerganov/llama.cpp",
+                    license = "MIT License"
+                )
+                LicenseCard(
+                    title = "Sherpa-ONNX",
+                    url = "https://github.com/k2-fsa/sherpa-onnx",
+                    license = "Apache License 2.0"
+                )
+                LicenseCard(
+                    title = "AI4Bharat Indic Conformer",
+                    url = "https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual",
+                    license = "MIT License"
+                )
+                LicenseCard(
+                    title = "Sarvam Translate",
+                    url = "https://huggingface.co/sarvamai/sarvam-translate",
+                    license = "GPL-3.0 License"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LicenseCard(title: String, url: String, license: String) {
+    val uriHandler = LocalUriHandler.current
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            .clickable { uriHandler.openUri(url) }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = license,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = url,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

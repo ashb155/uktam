@@ -60,8 +60,10 @@ IndicOffline is a powerful, entirely offline Android application for real-time s
 ## Contributing
 
 Contributions, issues, and feature requests are welcome! 
-If you plan to implement major features (such as adding support for new Indic languages or swapping out the underlying LLM), please open an issue first to discuss the proposed changes.
+If you plan to implement major features (such as adding support for new Indic languages), please open an issue first to discuss the proposed changes.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [GPL-3.0 License](LICENSE).
+
+*Note: Because this application integrates and distributes the Sarvam Translate model (which is GPL-3.0 licensed), the entire application is open-sourced under the GPL-3.0 license to comply with copyleft requirements.*
