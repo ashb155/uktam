@@ -24,7 +24,7 @@ class IndicAsrEngine(private val assetManager: AssetManager) {
                     model = "$languageCode/model.int8.onnx"
                 ),
                 tokens = "$languageCode/tokens.txt",
-                numThreads = 2,
+                numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4),
                 debug = false
             ),
             featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80)

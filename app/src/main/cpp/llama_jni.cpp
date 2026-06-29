@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <thread>
+#include <algorithm>
 #include "llama.h"
 
 struct LlamaState {
@@ -24,8 +26,10 @@ Java_com_example_indicoffline_LlamaWrapper_loadModel(JNIEnv *env, jobject, jstri
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx = 1024;
     ctx_params.n_batch = 512;
-    ctx_params.n_threads = 4;
-    ctx_params.n_threads_batch = 4;
+    int hw_threads = std::thread::hardware_concurrency();
+    int threads = (hw_threads > 0) ? std::min(4, hw_threads) : 4;
+    ctx_params.n_threads = threads;
+    ctx_params.n_threads_batch = threads;
     ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
 
     llama_context *ctx = llama_new_context_with_model(model, ctx_params);
