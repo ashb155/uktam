@@ -22,6 +22,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -220,12 +221,13 @@ fun AsrScreen(
                     
                     IconButton(
                         onClick = { viewModel.switchLanguage(if (srcLang == primaryLang) secondaryLang else primaryLang) },
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        enabled = !isRecording && !isTranslating
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SwapHoriz,
                             contentDescription = "Swap Languages",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            tint = if (!isRecording && !isTranslating) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                         )
                     }
                     
@@ -519,12 +521,19 @@ fun AboutScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val uriHandler = LocalUriHandler.current
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = "About Logo",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp).padding(bottom = 16.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = androidx.compose.ui.graphics.Color.White,
+                tonalElevation = 0.dp,
+                shadowElevation = 4.dp,
+                modifier = Modifier.size(80.dp).padding(bottom = 16.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_indikvox_logo),
+                    contentDescription = "IndikVox Logo",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Text(
                 text = "IndicOffline",
