@@ -93,7 +93,7 @@ class AudioCapturer {
 
         val floatArray = synchronized(bufferLock) {
             val arr = FloatArray(bufferSize)
-            for (i in 0..bufferSize) {
+            for (i in 0 until bufferSize) {
                 arr[i] = shortBuffer[i] / 32768.0f
             }
             arr
