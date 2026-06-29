@@ -210,9 +210,16 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         if (!isTtsReady || tts == null) return
         val locale = if (targetLangCode == "hi") Locale("hi", "IN") else Locale("kn", "IN")
         val result = tts?.setLanguage(locale)
+        android.util.Log.d("TtsDebug", "setLanguage result for ${locale.language}: $result")
 
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            onTtsMissing(getLanguageName(targetLangCode))
+        val voice = tts?.voices?.find { it.locale.language == locale.language }
+        val isNotInstalled = voice?.features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) == true
+
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED || isNotInstalled) {
+            android.util.Log.d("TtsDebug", "TTS missing data or not supported")
+            viewModelScope.launch(Dispatchers.Main) {
+                onTtsMissing(getLanguageName(targetLangCode))
+            }
             return
         }
 
