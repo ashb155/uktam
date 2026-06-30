@@ -633,7 +633,7 @@ fun AboutScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp)
-                    .clickable { uriHandler.openUri("https://github.com/ashb155/IndicOffline") }
+                    .clickable { uriHandler.openUri("https://github.com/ashb155/uktam") }
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -659,7 +659,7 @@ fun AboutScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp)
-                    .clickable { uriHandler.openUri("https://github.com/ashb155/IndicOffline/blob/main/LICENSE") }
+                    .clickable { uriHandler.openUri("https://github.com/ashb155/uktam/blob/main/LICENSE") }
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),

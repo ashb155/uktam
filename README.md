@@ -41,8 +41,8 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/ashb155/Uktam.ai.git
-   cd Uktam.ai
+   git clone https://github.com/ashb155/uktam.git
+   cd uktam
    ```
 
 2. **Sync Gradle & NDK**
