@@ -1,12 +1,12 @@
-# Privacy Policy for IndikVox
+# Privacy Policy for Uktam.ai
 
 **Effective Date: June 2026**
 
-IndikVox ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains our data collection, use, and disclosure practices.
+Uktam.ai ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains our data collection, use, and disclosure practices.
 
 ## 1. Information Collection and Use
 
-IndikVox is a fully offline, on-device application. **We do not collect, store, transmit, or share any personal data.** 
+Uktam.ai is a fully offline, on-device application. **We do not collect, store, transmit, or share any personal data.** 
 
 ### Audio Data and Microphone Access
 Our application requires access to your device's microphone (`android.permission.RECORD_AUDIO`) to provide real-time speech-to-text functionality. 
@@ -16,7 +16,7 @@ Our application requires access to your device's microphone (`android.permission
 
 ## 2. Third-Party Services
 
-We do not use any third-party analytics, tracking, or advertising services in IndikVox. Since the application operates entirely offline after the initial model download, no usage data or personal information is shared with external services.
+We do not use any third-party analytics, tracking, or advertising services in Uktam.ai. Since the application operates entirely offline after the initial model download, no usage data or personal information is shared with external services.
 
 ## 3. Data Security
 
@@ -28,4 +28,4 @@ We may update our Privacy Policy from time to time. Since the app is completely 
 
 ## 5. Contact Us
 
-If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us by opening an issue on our [GitHub repository](https://github.com/ashb155/IndikVox).
+If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us by opening an issue on our [GitHub repository](https://github.com/ashb155/Uktam.ai).
