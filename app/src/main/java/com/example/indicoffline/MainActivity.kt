@@ -41,6 +41,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -164,11 +165,26 @@ fun AsrScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "IndicOffline",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape = CircleShape,
+                            color = androidx.compose.ui.graphics.Color.White,
+                            shadowElevation = 4.dp
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_uktam_logo),
+                                contentDescription = "App Logo",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Uktam.ai",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                     
                     Row {
                         val isDarkModePref by viewModel.isDarkMode.collectAsState()
@@ -526,17 +542,18 @@ fun AboutScreen(
                 color = androidx.compose.ui.graphics.Color.White,
                 tonalElevation = 0.dp,
                 shadowElevation = 4.dp,
-                modifier = Modifier.size(80.dp).padding(bottom = 16.dp)
+                modifier = Modifier.size(80.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_indikvox_logo),
+                    painter = painterResource(id = R.drawable.ic_uktam_logo),
                     contentDescription = "IndikVox Logo",
                     modifier = Modifier.fillMaxSize()
                 )
             }
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "IndicOffline",
+                text = "Uktam.ai",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -738,7 +755,7 @@ fun LicensesScreen(onNavigateBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    text = "IndicOffline is powered by the following open-source technologies, custom-quantized and optimized to run smoothly on standard smartphone hardware:",
+                    text = "Uktam.ai is powered by the following open-source technologies, custom-quantized and optimized to run smoothly on standard smartphone hardware:",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
