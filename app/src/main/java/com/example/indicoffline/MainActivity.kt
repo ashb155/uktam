@@ -682,26 +682,49 @@ fun AboutScreen(
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+                    .clickable { uriHandler.openUri("https://github.com/ashb155/uktam/blob/main/PRIVACY.md") }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "View privacy policy",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "View Source Code",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+
                     Text(
-                        text = "Powered by Open Source",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "• Sarvam Translate and AI4Bharat Indic Conformer,  custom quantized for your phone \n• llama.cpp for local inference\n• Sherpa-ONNX for fast on-device ASR",
+                        text = "Powered by Sarvam & AI4Bharat. Built for India, by Indian AI",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "\nCompletely offline & private. Your voice and data never leave this device.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Uktam - derived from Sanskrit, meaning \"spoken\"...",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    )                    
+
+                    
                 }
             }
             
