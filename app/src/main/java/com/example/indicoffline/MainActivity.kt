@@ -82,7 +82,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -713,16 +716,16 @@ fun AboutScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
 
                     Text(
-                        text = "Powered by Sarvam & AI4Bharat. Built for India, by Indian AI",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = "Uktam - derived from Sanskrit, meaning \"spoken\"...",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )                    
+                    text = buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                    append("Uktam")
+                }
+                append(" means \"spoken\" in Sanskrit — because every Indian language deserves to be heard. Built for India, by Indian AI...")
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Start
+)            
 
                     
                 }

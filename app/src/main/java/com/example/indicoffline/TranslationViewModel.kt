@@ -102,8 +102,8 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         
     fun getLanguageName(code: String): String {
         return when (code) {
-            "hi" -> "Hindi"
-            "kn" -> "Kannada"
+            "hi" -> "हिन्दी"
+            "kn" -> "ಕನ್ನಡ"
             else -> "Unknown"
         }
     }
