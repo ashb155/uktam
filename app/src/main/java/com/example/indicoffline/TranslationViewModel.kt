@@ -237,7 +237,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun speak(text: String, targetLangCode: String, onTtsMissing: (String) -> Unit) {
         if (!isTtsReady || tts == null) return
-        val locale = if (targetLangCode == "hi") Locale("hi", "IN") else Locale("kn", "IN")
+        val locale = if (targetLangCode == "hi") Locale.Builder().setLanguage("hi").setRegion("IN").build() else Locale.Builder().setLanguage("kn").setRegion("IN").build()
         val result = tts?.setLanguage(locale)
         android.util.Log.d("TtsDebug", "setLanguage result for ${locale.language}: $result")
 

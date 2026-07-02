@@ -56,6 +56,7 @@ class ModelDownloadWorker(
         Result.failure()
     }
     
+    @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun tryDownload(urlToDownload: String, modelFilename: String): Boolean {
         try {
             val file = File(applicationContext.filesDir, modelFilename)
