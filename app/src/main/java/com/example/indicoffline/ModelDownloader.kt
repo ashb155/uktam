@@ -1,11 +1,7 @@
 package com.example.indicoffline
 
 import android.content.Context
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 
 object ModelDownloader {
     private val MODEL_URLS = listOf(
