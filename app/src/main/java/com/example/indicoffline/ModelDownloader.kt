@@ -28,8 +28,13 @@ object ModelDownloader {
             "MODEL_FILENAME" to MODEL_FILENAME
         )
 
+        val constraints = androidx.work.Constraints.Builder()
+            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            .build()
+
         val workRequest = androidx.work.OneTimeWorkRequestBuilder<ModelDownloadWorker>()
             .setInputData(inputData)
+            .setConstraints(constraints)
             .addTag("model_download")
             .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
