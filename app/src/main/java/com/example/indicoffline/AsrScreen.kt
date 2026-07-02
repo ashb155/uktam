@@ -183,7 +183,7 @@ fun AsrScreen(
                         color = if (srcLang == primaryLang) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.weight(1f)
                             .clip(CircleShape)
-                            .clickable { Toast.makeText(context, "More languages coming soon!", Toast.LENGTH_SHORT).show() }
+                            .clickable { Toast.makeText(context, "More Indian languages coming soon!", Toast.LENGTH_SHORT).show() }
                     ) {
                         Text(
                             text = viewModel.getLanguageName(primaryLang),
@@ -213,7 +213,7 @@ fun AsrScreen(
                         color = if (srcLang == secondaryLang) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.weight(1f)
                             .clip(CircleShape)
-                            .clickable { Toast.makeText(context, "More languages coming soon!", Toast.LENGTH_SHORT).show() }
+                            .clickable { Toast.makeText(context, "More Indian languages coming soon!", Toast.LENGTH_SHORT).show() }
                     ) {
                         Text(
                             text = viewModel.getLanguageName(secondaryLang),
@@ -236,6 +236,45 @@ fun AsrScreen(
             contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (conversationHistory.isEmpty() && !isRecording && !isTranslating) {
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize().padding(bottom = 60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) { 
+                            Text(
+                                text = "Tap the languages at the top to choose your preferred languages",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Press the mic icon and speak in your preferred language",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Translation and speech in required language will appear automatically",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Press the swap icon to switch turns",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+            
             items(conversationHistory) { message ->
                 val isPrimary = message.speakerLang == primaryLang
                 Row(

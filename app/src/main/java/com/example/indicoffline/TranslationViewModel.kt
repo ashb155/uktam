@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import androidx.core.content.edit
 
 data class ConversationMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
@@ -41,14 +42,14 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _isModelDownloaded = MutableStateFlow(ModelDownloader.isModelDownloaded(application))
     val isModelDownloaded: StateFlow<Boolean> = _isModelDownloaded.asStateFlow()
 
-    private val _isDarkMode = MutableStateFlow<Boolean?>(
+    private val _isDarkMode = MutableStateFlow(
         if (prefs.contains("is_dark_mode")) prefs.getBoolean("is_dark_mode", false) else null
     )
     val isDarkMode: StateFlow<Boolean?> = _isDarkMode.asStateFlow()
 
     fun setDarkMode(isDark: Boolean) {
         _isDarkMode.value = isDark
-        prefs.edit().putBoolean("is_dark_mode", isDark).apply()
+        prefs.edit { putBoolean("is_dark_mode", isDark) }
     }
 
     private val _isHapticsEnabled = MutableStateFlow(prefs.getBoolean("is_haptics_enabled", true))
@@ -56,7 +57,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setHapticsEnabled(enabled: Boolean) {
         _isHapticsEnabled.value = enabled
-        prefs.edit().putBoolean("is_haptics_enabled", enabled).apply()
+        prefs.edit { putBoolean("is_haptics_enabled", enabled) }
     }
 
     private val _showNerdStats = MutableStateFlow(prefs.getBoolean("show_nerd_stats", false))
@@ -64,7 +65,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setShowNerdStats(enabled: Boolean) {
         _showNerdStats.value = enabled
-        prefs.edit().putBoolean("show_nerd_stats", enabled).apply()
+        prefs.edit { putBoolean("show_nerd_stats", enabled) }
     }
 
     private val _ttsSpeechSpeed = MutableStateFlow(prefs.getFloat("tts_speech_speed", 1.0f))
@@ -72,7 +73,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setTtsSpeechSpeed(speed: Float) {
         _ttsSpeechSpeed.value = speed
-        prefs.edit().putFloat("tts_speech_speed", speed).apply()
+        prefs.edit { putFloat("tts_speech_speed", speed) }
         tts?.setSpeechRate(speed)
     }
 
@@ -108,6 +109,14 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun getLanguageNameEnglish(code: String): String {
+        return when (code) {
+            "hi" -> "Hindi"
+            "kn" -> "Kannada"
+            else -> "Unknown"
+        }
+    }
+
     init {
         tts = TextToSpeech(application) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -119,23 +128,43 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
             asrEngine.loadLanguage("hi")
             
             val appCtx = getApplication<Application>()
-            val downloadedInitially = _isModelDownloaded.value
             
-            if (!downloadedInitially) {
-                android.util.Log.d("LlamaTest", "Downloading model...")
-                ModelDownloader.downloadModel(appCtx) { progress ->
-                    android.util.Log.d("LlamaTest", "Download progress: $progress%")
-                    _downloadProgress.value = progress
+            if (!_isModelDownloaded.value) {
+                android.util.Log.d("LlamaTest", "Starting WorkManager download...")
+                ModelDownloader.enqueueDownload(appCtx)
+                
+                launch {
+                    androidx.work.WorkManager.getInstance(appCtx)
+                        .getWorkInfosByTagFlow("model_download")
+                        .collect { workInfoList ->
+                            val workInfo = workInfoList.firstOrNull { !it.state.isFinished || it.state == androidx.work.WorkInfo.State.SUCCEEDED }
+                            if (workInfo != null) {
+                                val progress = workInfo.progress.getInt("PROGRESS", _downloadProgress.value)
+                                if (progress > _downloadProgress.value) {
+                                    _downloadProgress.value = progress
+                                }
+                                
+                                if (workInfo.state == androidx.work.WorkInfo.State.SUCCEEDED && !_isModelReady.value) {
+                                    _isModelDownloaded.value = true
+                                    _downloadProgress.value = 100
+                                    val modelPath = ModelDownloader.getModelFile(appCtx).absolutePath
+                                    if (llamaCtx == 0L) {
+                                        llamaCtx = LlamaWrapper.loadModel(modelPath)
+                                        if (llamaCtx != 0L) _isModelReady.value = true
+                                    }
+                                }
+                            }
+                        }
                 }
-                _isModelDownloaded.value = true
             } else {
                 _downloadProgress.value = 100
-            }
-            val modelPath = ModelDownloader.getModelFile(appCtx).absolutePath
-            llamaCtx = LlamaWrapper.loadModel(modelPath)
-            android.util.Log.d("LlamaTest", if (llamaCtx != 0L) "Model loaded" else "Model load FAILED")
-            if (llamaCtx != 0L) {
-                _isModelReady.value = true
+                val modelPath = ModelDownloader.getModelFile(appCtx).absolutePath
+                if (llamaCtx == 0L) {
+                    llamaCtx = LlamaWrapper.loadModel(modelPath)
+                    if (llamaCtx != 0L) {
+                        _isModelReady.value = true
+                    }
+                }
             }
         }
     }
@@ -218,7 +247,9 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED || isNotInstalled) {
             android.util.Log.d("TtsDebug", "TTS missing data or not supported")
             viewModelScope.launch(Dispatchers.Main) {
-                onTtsMissing(getLanguageName(targetLangCode))
+                val nativeName = getLanguageName(targetLangCode)
+                val englishName = getLanguageNameEnglish(targetLangCode)
+                onTtsMissing("$englishName ($nativeName)")
             }
             return
         }
