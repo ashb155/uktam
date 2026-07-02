@@ -73,6 +73,12 @@ fun AppNavigation(
                 }
                 composable("licenses") {
                     LicensesScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToThirdParty = { navController.navigate("third_party_licenses") }
+                    )
+                }
+                composable("third_party_licenses") {
+                    ThirdPartyLicensesScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

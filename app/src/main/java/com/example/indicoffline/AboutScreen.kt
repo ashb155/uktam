@@ -269,7 +269,7 @@ fun AboutScreen(
             Spacer(modifier = Modifier.weight(1f))
             
             Text(
-                text = "Open Source Licenses",
+                text = "Open Source and Third-Party Licenses",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier

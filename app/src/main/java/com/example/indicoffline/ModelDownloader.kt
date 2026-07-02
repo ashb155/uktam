@@ -8,7 +8,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 object ModelDownloader {
-    private const val MODEL_URL = "https://huggingface.co/mradermacher/sarvam-translate-GGUF/resolve/main/sarvam-translate.Q4_K_S.gguf"
+    private val MODEL_URLS = listOf(
+        "https://huggingface.co/fischerman/sarvam-translate-gguf/resolve/main/sarvam-translate.Q4_K_S.gguf",
+        "https://huggingface.co/mradermacher/sarvam-translate-GGUF/resolve/main/sarvam-translate.Q4_K_S.gguf"
+    )
     private const val MODEL_FILENAME = "sarvam-translate.Q4_K_S.gguf"
 
     fun getModelFile(context: Context): File {
@@ -27,11 +30,16 @@ object ModelDownloader {
     ): Boolean = withContext(Dispatchers.IO) {
         var attempts = 0
         var delayMs = 5000L
+        var urlIndex = 0
         while (attempts < 50) {
-            val success = tryDownload(context, onProgress)
+            val success = tryDownload(context, onProgress, MODEL_URLS[urlIndex])
             if (success) return@withContext true
+            
+            // If download fails, try the next URL in the list
+            urlIndex = (urlIndex + 1) % MODEL_URLS.size
+            
             attempts++
-            android.util.Log.d("ModelDownloader", "Retrying... attempt $attempts")
+            android.util.Log.d("ModelDownloader", "Retrying with ${MODEL_URLS[urlIndex]}... attempt $attempts")
             kotlinx.coroutines.delay(delayMs)
             delayMs = minOf(delayMs * 2, 60000L)
         }
@@ -40,14 +48,15 @@ object ModelDownloader {
 
     private suspend fun tryDownload(
         context: Context,
-        onProgress: (Int) -> Unit
+        onProgress: (Int) -> Unit,
+        urlToDownload: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val file = File(context.filesDir, MODEL_FILENAME)
             val tempFile = File(context.filesDir, "$MODEL_FILENAME.tmp")
             val existingBytes = if (tempFile.exists()) tempFile.length() else 0L
 
-            val url = URL(MODEL_URL)
+            val url = URL(urlToDownload)
             val connection = url.openConnection() as HttpURLConnection
             connection.connectTimeout = 30000
             connection.readTimeout = 60000

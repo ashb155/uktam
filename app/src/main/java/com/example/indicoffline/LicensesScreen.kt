@@ -26,9 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 
 @Composable
-fun LicensesScreen(onNavigateBack: () -> Unit) {
+fun LicensesScreen(onNavigateBack: () -> Unit, onNavigateToThirdParty: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
@@ -88,6 +89,22 @@ fun LicensesScreen(onNavigateBack: () -> Unit) {
                     url = "https://huggingface.co/sarvamai/sarvam-translate",
                     license = "GPL-3.0 License"
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(), 
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Android & Third-Party Library Licenses",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .clickable { onNavigateToThirdParty() }
+                            .padding(8.dp)
+                    )
+                }
             }
         }
     }
@@ -121,6 +138,41 @@ fun LicenseCard(title: String, url: String, license: String) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@Composable
+fun ThirdPartyLicensesScreen(onNavigateBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Text(
+                    text = "Third-Party Licenses",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+        LibrariesContainer(
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
