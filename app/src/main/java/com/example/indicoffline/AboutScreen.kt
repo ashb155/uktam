@@ -96,8 +96,15 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val versionName = try {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            } catch (e: Exception) {
+                "1.0.0"
+            }
+
             Text(
-                text = "Version 1.0.0",
+                text = "Version $versionName",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )

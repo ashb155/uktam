@@ -15,11 +15,11 @@ android {
     assetPacks += listOf(":asr_assets")
 
     defaultConfig {
-        applicationId = "com.example.indicoffline"
+        applicationId = "ai.uktam"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -49,6 +49,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

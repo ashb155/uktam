@@ -23,3 +23,11 @@
 -keep class com.example.indicoffline.LlamaWrapper {
     native <methods>;
 }
+
+# Keep sherpa-onnx classes for JNI
+-keep class com.k2fsa.sherpa.** { *; }
+
+# Keep WorkManager and Room Database classes from being stripped by R8
+-keep class androidx.work.** { *; }
+-keep class androidx.room.** { *; }
+-keep class * extends androidx.room.RoomDatabase
