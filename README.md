@@ -3,7 +3,7 @@
 Uktam.ai is a powerful, entirely offline Android application for real-time speech-to-text (ASR) transcription and machine translation between Indic languages. Built with modern Android development practices, it runs state-of-the-art AI models directly on your device—ensuring complete privacy and zero reliance on cloud APIs.
 
 ## Why Uktam.ai?
-* **100% Offline & Private:** No audio recordings or text transcripts ever leave your device. Every single piece of processing—from speech recognition to large language model (LLM) translation—happens locally on your smartphone's silicon.
+* **100% Offline & Private:** No audio recordings or text transcripts ever leave your device. Every single piece of processing—from speech recognition to large language model translation—happens locally on your smartphone's silicon.
 * **Made for India, by Indian AI:** Instead of relying on generic global models, Uktam.ai is strictly built around models researched and trained specifically for Indian languages. By utilizing **Sarvam AI** and **AI4Bharat**, the app captures the nuances, dialects, and grammatical complexities of languages far better than generic cloud APIs.
 * **Custom Quantized for Mobile:** Running multi-billion parameter AI models on a phone requires immense compute. Uktam.ai uses models that were **custom-quantized** (GGUF/ONNX) specifically for this project. This hands-on optimization drastically reduces the memory footprint and battery consumption, allowing them to run smoothly on standard smartphone hardware while maintaining near-perfect accuracy.
 * **Zero Latency / No Internet Required:** Perfect for remote areas, low-connectivity zones, or traveling. Once the models are downloaded, you never need Wi-Fi or mobile data to translate again.
@@ -55,7 +55,7 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
    - Ensure you have an active internet connection for this initial step so the app can download and extract the required AI models to your device's internal storage.
 
 4. **Run the App**
-   Connect a physical Android device (emulators may struggle with local LLM inference without hardware acceleration) and click **Run**.
+   Connect a physical Android device (emulators may struggle with local model inference without hardware acceleration) and click **Run**.
 
 
 ## Contributing
