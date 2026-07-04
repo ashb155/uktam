@@ -35,7 +35,7 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 
 * Android Studio (Koala or newer recommended)
 * Android SDK Minimum API Level: 34 (Android 14)
-* Minimum Device RAM: 6GB Recommended (Devices with 4GB or less are strictly unsupported due to LLM memory constraints and will crash)
+* Minimum Device RAM: 6GB Recommended (Devices with 4GB or less will be unsupported due to memory constraints and will crash)
 * Android NDK & CMake (Required for building the `llama.cpp` JNI bindings)
 
 ### Installation & Setup
