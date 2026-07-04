@@ -11,6 +11,15 @@ struct LlamaState {
     llama_context *ctx;
 };
 
+#include <sys/system_properties.h>
+#include <cstdlib>
+
+int get_android_api_level() {
+    char osVersion[PROP_VALUE_MAX+1];
+    int len = __system_property_get("ro.build.version.sdk", osVersion);
+    return (len > 0) ? std::atoi(osVersion) : 0;
+}
+
 extern "C" {
 
 JNIEXPORT jlong JNICALL
@@ -30,9 +39,17 @@ Java_com_example_indicoffline_LlamaWrapper_loadModel(JNIEnv *env, jobject, jstri
     int threads = (hw_threads > 0) ? std::min(4, hw_threads) : 4;
     ctx_params.n_threads = threads;
     ctx_params.n_threads_batch = threads;
-    ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+    
 
-    llama_context *ctx = llama_new_context_with_model(model, ctx_params);
+    if (get_android_api_level() >= 33) {
+        ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+    } else {
+        ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
+        ctx_params.type_k = GGML_TYPE_F32;
+        ctx_params.type_v = GGML_TYPE_F32;
+    }
+
+    llama_context *ctx = llama_init_from_model(model, ctx_params);
     if (!ctx) {
         llama_model_free(model);
         return 0L;

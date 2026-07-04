@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.example.indicoffline.ui.theme.IndicofflineTheme
@@ -37,6 +38,13 @@ fun AppNavigation(
                 startDestination = if (!isModelDownloaded) "download" else "asr"
             ) {
                 composable("download") {
+                    LaunchedEffect(isModelDownloaded) {
+                        if (isModelDownloaded) {
+                            navController.navigate("asr") {
+                                popUpTo("download") { inclusive = true }
+                            }
+                        }
+                    }
                     DownloadScreen(viewModel = viewModel)
                 }
                 composable("asr") {
