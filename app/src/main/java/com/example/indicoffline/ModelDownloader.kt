@@ -8,6 +8,11 @@ object ModelDownloader {
         "https://huggingface.co/fischerman/sarvam-translate-gguf/resolve/main/sarvam-translate.Q4_K_S.gguf",
         "https://huggingface.co/mradermacher/sarvam-translate-GGUF/resolve/main/sarvam-translate.Q4_K_S.gguf"
     )
+
+//    private val MODEL_URLS1 = listOf(
+//        "https://huggingface.co/mradermacher/sarvam-translate-GGUF/blob/main/sarvam-translate.Q2_K.gguf",
+
+//    )
     private const val MODEL_FILENAME = "sarvam-translate.Q4_K_S.gguf"
 
     fun getModelFile(context: Context): File {
