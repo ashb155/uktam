@@ -84,7 +84,7 @@ fun AboutScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_uktam_logo),
-                    contentDescription = "IndikVox Logo",
+                    contentDescription = "Uktam Logo",
                     modifier = Modifier.fillMaxSize().scale(1.25f)
                 )
             }
