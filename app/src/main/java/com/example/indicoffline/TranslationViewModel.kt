@@ -98,6 +98,20 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     private val _secondaryLang = MutableStateFlow("kn")
     val secondaryLang: StateFlow<String> = _secondaryLang.asStateFlow()
 
+    fun setPrimaryLang(lang: String) {
+        _primaryLang.value = lang
+        if (_srcLang.value != _secondaryLang.value) {
+            switchLanguage(lang)
+        }
+    }
+
+    fun setSecondaryLang(lang: String) {
+        _secondaryLang.value = lang
+        if (_srcLang.value == _secondaryLang.value) {
+            switchLanguage(lang)
+        }
+    }
+
     val targetLang: String
         get() = if (_srcLang.value == _primaryLang.value) _secondaryLang.value else _primaryLang.value
         
@@ -105,6 +119,8 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         return when (code) {
             "hi" -> "हिन्दी"
             "kn" -> "ಕನ್ನಡ"
+            "ta" -> "தமிழ்"
+            "te" -> "తెలుగు"
             else -> "Unknown"
         }
     }
@@ -113,6 +129,8 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         return when (code) {
             "hi" -> "Hindi"
             "kn" -> "Kannada"
+            "ta" -> "Tamil"
+            "te" -> "Telugu"
             else -> "Unknown"
         }
     }
@@ -237,7 +255,13 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun speak(text: String, targetLangCode: String, onTtsMissing: (String) -> Unit) {
         if (!isTtsReady || tts == null) return
-        val locale = if (targetLangCode == "hi") Locale.Builder().setLanguage("hi").setRegion("IN").build() else Locale.Builder().setLanguage("kn").setRegion("IN").build()
+        val locale = when (targetLangCode) {
+            "hi" -> Locale.Builder().setLanguage("hi").setRegion("IN").build()
+            "kn" -> Locale.Builder().setLanguage("kn").setRegion("IN").build()
+            "ta" -> Locale.Builder().setLanguage("ta").setRegion("IN").build()
+            "te" -> Locale.Builder().setLanguage("te").setRegion("IN").build()
+            else -> Locale.Builder().setLanguage("hi").setRegion("IN").build()
+        }
         val result = tts?.setLanguage(locale)
         android.util.Log.d("TtsDebug", "setLanguage result for ${locale.language}: $result")
 

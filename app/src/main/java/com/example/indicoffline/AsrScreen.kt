@@ -37,6 +37,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
@@ -66,11 +68,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
 
 @Composable
@@ -112,7 +118,10 @@ fun AsrScreen(
         onResult = { isGranted -> hasMicPermission = isGranted }
     )
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()) {
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -173,27 +182,109 @@ fun AsrScreen(
                         }
                     }
                 }
+                val availableLanguages = listOf("hi", "kn", "ta", "te")
+                var primaryExpanded by remember { mutableStateOf(false) }
+                var secondaryExpanded by remember { mutableStateOf(false) }
+                var primaryBoxWidth by remember { mutableStateOf(0) }
+                var secondaryBoxWidth by remember { mutableStateOf(0) }
+                val density = LocalDensity.current
+
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = if (srcLang == primaryLang) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.weight(1f)
-                            .clip(CircleShape)
-                            .clickable { Toast.makeText(context, "More Indian languages coming soon!", Toast.LENGTH_SHORT).show() }
-                    ) {
-                        Text(
-                            text = viewModel.getLanguageName(primaryLang),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = if (srcLang == primaryLang) FontWeight.Bold else FontWeight.Medium
-                            ),
-                            modifier = Modifier.padding(vertical = 12.dp),
-                            textAlign = TextAlign.Center,
-                            color = if (srcLang == primaryLang) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    Box(modifier = Modifier.weight(1f).onGloballyPositioned { primaryBoxWidth = it.size.width }) {
+                        val isPrimaryActive = srcLang == primaryLang
+                        val primaryBg = if (isPrimaryActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                        val primaryText = if (isPrimaryActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        
+                        Surface(
+                            onClick = { primaryExpanded = true },
+                            shape = RoundedCornerShape(24.dp),
+                            color = primaryBg,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = viewModel.getLanguageName(primaryLang),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = if (isPrimaryActive) FontWeight.Bold else FontWeight.Medium
+                                    ),
+                                    textAlign = TextAlign.Center,
+                                    color = if (isPrimaryActive) primaryText else primaryText.copy(alpha = 0.6f),
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Dropdown",
+                                    tint = if (isPrimaryActive) primaryText else primaryText.copy(alpha = 0.6f),
+                                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+                                )
+                            }
+                        }
+                        
+                        if (primaryExpanded) {
+                            Popup(
+                                onDismissRequest = { primaryExpanded = false },
+                                properties = PopupProperties(focusable = true)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = primaryBg,
+                                    modifier = Modifier.width(with(density) { primaryBoxWidth.toDp() }).animateContentSize(),
+                                    shadowElevation = 8.dp
+                                ) {
+                                    Column {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth()
+                                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                                .clickable { primaryExpanded = false }
+                                                .padding(vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                text = viewModel.getLanguageName(primaryLang),
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontWeight = if (isPrimaryActive) FontWeight.Bold else FontWeight.Medium
+                                                ),
+                                                textAlign = TextAlign.Center,
+                                                color = if (isPrimaryActive) primaryText else primaryText.copy(alpha = 0.6f),
+                                                modifier = Modifier.align(Alignment.Center)
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowDropUp,
+                                                contentDescription = "Dropdown",
+                                                tint = if (isPrimaryActive) primaryText else primaryText.copy(alpha = 0.6f),
+                                                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                                            availableLanguages.forEach { lang ->
+                                                val isSelected = lang == primaryLang
+                                                val isDisabled = lang == secondaryLang
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth()
+                                                        .clickable(enabled = !isDisabled) { 
+                                                            viewModel.setPrimaryLang(lang)
+                                                            primaryExpanded = false
+                                                        }
+                                                        .padding(vertical = 10.dp),
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    Text(
+                                                        text = viewModel.getLanguageName(lang),
+                                                        color = if (isSelected) primaryText else if (isDisabled) primaryText.copy(alpha = 0.2f) else primaryText.copy(alpha = 0.6f),
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                    ) 
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                     
                     IconButton(
@@ -208,22 +299,97 @@ fun AsrScreen(
                         )
                     }
                     
-                    Surface(
-                        shape = CircleShape,
-                        color = if (srcLang == secondaryLang) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.weight(1f)
-                            .clip(CircleShape)
-                            .clickable { Toast.makeText(context, "More Indian languages coming soon!", Toast.LENGTH_SHORT).show() }
-                    ) {
-                        Text(
-                            text = viewModel.getLanguageName(secondaryLang),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = if (srcLang == secondaryLang) FontWeight.Bold else FontWeight.Medium
-                            ),
-                            modifier = Modifier.padding(vertical = 12.dp),
-                            textAlign = TextAlign.Center,
-                            color = if (srcLang == secondaryLang) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    Box(modifier = Modifier.weight(1f).onGloballyPositioned { secondaryBoxWidth = it.size.width }) {
+                        val isSecondaryActive = srcLang == secondaryLang
+                        val secondaryBg = if (isSecondaryActive) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
+                        val secondaryText = if (isSecondaryActive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+
+                        Surface(
+                            onClick = { secondaryExpanded = true },
+                            shape = RoundedCornerShape(24.dp),
+                            color = secondaryBg,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = viewModel.getLanguageName(secondaryLang),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = if (isSecondaryActive) FontWeight.Bold else FontWeight.Medium
+                                    ),
+                                    textAlign = TextAlign.Center,
+                                    color = if (isSecondaryActive) secondaryText else secondaryText.copy(alpha = 0.6f),
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Dropdown",
+                                    tint = if (isSecondaryActive) secondaryText else secondaryText.copy(alpha = 0.6f),
+                                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+                                )
+                            }
+                        }
+                        
+                        if (secondaryExpanded) {
+                            Popup(
+                                onDismissRequest = { secondaryExpanded = false },
+                                properties = androidx.compose.ui.window.PopupProperties(focusable = true)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = secondaryBg,
+                                    modifier = Modifier.width(with(density) { secondaryBoxWidth.toDp() }).animateContentSize(),
+                                    shadowElevation = 8.dp
+                                ) {
+                                    Column {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth()
+                                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                                .clickable { secondaryExpanded = false }
+                                                .padding(vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                text = viewModel.getLanguageName(secondaryLang),
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontWeight = if (isSecondaryActive) FontWeight.Bold else FontWeight.Medium
+                                                ),
+                                                textAlign = TextAlign.Center,
+                                                color = if (isSecondaryActive) secondaryText else secondaryText.copy(alpha = 0.6f),
+                                                modifier = Modifier.align(Alignment.Center)
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowDropUp,
+                                                contentDescription = "Dropdown",
+                                                tint = if (isSecondaryActive) secondaryText else secondaryText.copy(alpha = 0.6f),
+                                                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                                            availableLanguages.forEach { lang ->
+                                                val isSelected = lang == secondaryLang
+                                                val isDisabled = lang == primaryLang
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth()
+                                                        .clickable(enabled = !isDisabled) { 
+                                                            viewModel.setSecondaryLang(lang)
+                                                            secondaryExpanded = false
+                                                        }
+                                                        .padding(vertical = 10.dp),
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    Text(
+                                                        text = viewModel.getLanguageName(lang),
+                                                        color = if (isSelected) secondaryText else if (isDisabled) secondaryText.copy(alpha = 0.2f) else secondaryText.copy(alpha = 0.6f),
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                    ) 
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))

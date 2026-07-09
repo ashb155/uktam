@@ -6,6 +6,66 @@
 #include <algorithm>
 #include "llama.h"
 
+#include <sched.h>
+#include <unistd.h>
+#include <fstream>
+#include <dirent.h>
+#include <android/log.h>
+
+std::vector<int> get_performance_cores() {
+    std::vector<int> perf_cores;
+    std::vector<std::pair<int, long>> core_capacities;
+    bool used_freq_fallback = false;
+
+    for (int i = 0; i < 32; ++i) { 
+        std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpu_capacity";
+        std::ifstream file(path);
+        if (file.is_open()) {
+            long capacity;
+            if (file >> capacity) {
+                core_capacities.push_back({i, capacity});
+            }
+        }
+    }
+
+    if (core_capacities.empty()) {
+        used_freq_fallback = true;
+        for (int i = 0; i < 32; ++i) { 
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/cpuinfo_max_freq";
+            std::ifstream file(path);
+            if (file.is_open()) {
+                long freq;
+                if (file >> freq) {
+                    core_capacities.push_back({i, freq});
+                }
+            }
+        }
+    }
+
+    if (!core_capacities.empty()) {
+        long max_capacity = core_capacities[0].second;
+        for (const auto& core : core_capacities) {
+            if (core.second > max_capacity) max_capacity = core.second;
+        }
+
+        long threshold = used_freq_fallback ? (long)(max_capacity * 0.8) : (long)(max_capacity * 0.5);
+
+        std::sort(core_capacities.begin(), core_capacities.end(), [](const std::pair<int, long>& a, const std::pair<int, long>& b) {
+            return a.second > b.second;
+        });
+
+        for (const auto& core : core_capacities) {
+            if (core.second >= threshold && perf_cores.size() < 4) {
+                perf_cores.push_back(core.first);
+                __android_log_print(ANDROID_LOG_DEBUG, "LlamaJNI", "Selected Core %d | Score: %ld", core.first, core.second);
+            } else {
+                __android_log_print(ANDROID_LOG_DEBUG, "LlamaJNI", "Rejected Core %d | Score: %ld", core.first, core.second);
+            }
+        }
+    }
+    return perf_cores;
+}
+
 struct LlamaState {
     llama_model *model;
     llama_context *ctx;
@@ -35,8 +95,38 @@ Java_com_example_indicoffline_LlamaWrapper_loadModel(JNIEnv *env, jobject, jstri
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx = 1024;
     ctx_params.n_batch = 512;
-    int hw_threads = std::thread::hardware_concurrency();
-    int threads = (hw_threads > 0) ? std::min(4, hw_threads) : 4;
+    std::vector<int> perf_cores = get_performance_cores();
+    int threads = 4; 
+
+    cpu_set_t original_mask;
+    CPU_ZERO(&original_mask);
+    bool has_original_mask = (sched_getaffinity(0, sizeof(original_mask), &original_mask) == 0);
+
+    if (!perf_cores.empty()) {
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        std::string core_list = "[";
+        for (size_t i = 0; i < perf_cores.size(); ++i) {
+            CPU_SET(perf_cores[i], &mask);
+            core_list += std::to_string(perf_cores[i]);
+            if (i < perf_cores.size() - 1) core_list += ", ";
+        }
+        core_list += "]";
+
+        if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == 0) {
+            threads = perf_cores.size();
+            __android_log_print(ANDROID_LOG_DEBUG, "LlamaJNI", "Successfully pinned thread to %d performance cores: %s", threads, core_list.c_str());
+        } else {
+            __android_log_print(ANDROID_LOG_ERROR, "LlamaJNI", "Failed to set thread affinity.");
+            int hw_threads = std::thread::hardware_concurrency();
+            threads = (hw_threads > 0) ? std::min(4, hw_threads) : 4;
+        }
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, "LlamaJNI", "Could not detect performance cores. Falling back to default.");
+        int hw_threads = std::thread::hardware_concurrency();
+        threads = (hw_threads > 0) ? std::min(4, hw_threads) : 4;
+    }
+    
     ctx_params.n_threads = threads;
     ctx_params.n_threads_batch = threads;
     
@@ -50,6 +140,12 @@ Java_com_example_indicoffline_LlamaWrapper_loadModel(JNIEnv *env, jobject, jstri
     }
 
     llama_context *ctx = llama_init_from_model(model, ctx_params);
+    
+    if (has_original_mask) {
+        sched_setaffinity(0, sizeof(original_mask), &original_mask);
+        __android_log_print(ANDROID_LOG_DEBUG, "LlamaJNI", "Restored original JNI thread affinity.");
+    }
+
     if (!ctx) {
         llama_model_free(model);
         return 0L;
