@@ -262,7 +262,7 @@ fun AboutScreen(
                 withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
                     append("Uktam")
                 }
-                append(" means \"spoken\" in Sanskrit — because every Indian language deserves to be heard. Built for India, by Indian AI...")
+                append(" means \"spoken\" in Sanskrit — because every Indian language deserves to be heard and understood.\nBuilt for India, by Indian AI...")
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
