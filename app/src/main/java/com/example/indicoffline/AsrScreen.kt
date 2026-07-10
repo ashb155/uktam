@@ -56,7 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,15 +89,15 @@ fun AsrScreen(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
-    val srcLang by viewModel.srcLang.collectAsState()
-    val primaryLang by viewModel.primaryLang.collectAsState()
-    val secondaryLang by viewModel.secondaryLang.collectAsState()
-    val transcription by viewModel.transcription.collectAsState()
-    val conversationHistory by viewModel.conversationHistory.collectAsState()
-    val isRecording by viewModel.isRecording.collectAsState()
-    val isTranslating by viewModel.isTranslating.collectAsState()
-    val showNerdStats by viewModel.showNerdStats.collectAsState()
+    val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsStateWithLifecycle()
+    val srcLang by viewModel.srcLang.collectAsStateWithLifecycle()
+    val primaryLang by viewModel.primaryLang.collectAsStateWithLifecycle()
+    val secondaryLang by viewModel.secondaryLang.collectAsStateWithLifecycle()
+    val transcription by viewModel.transcription.collectAsStateWithLifecycle()
+    val conversationHistory by viewModel.conversationHistory.collectAsStateWithLifecycle()
+    val isRecording by viewModel.isRecording.collectAsStateWithLifecycle()
+    val isTranslating by viewModel.isTranslating.collectAsStateWithLifecycle()
+    val showNerdStats by viewModel.showNerdStats.collectAsStateWithLifecycle()
     
     val listState = rememberLazyListState()
 
@@ -154,7 +154,7 @@ fun AsrScreen(
                     }
                     
                     Row {
-                        val isDarkModePref by viewModel.isDarkMode.collectAsState()
+                        val isDarkModePref by viewModel.isDarkMode.collectAsStateWithLifecycle()
                         val systemDarkTheme = isSystemInDarkTheme()
                         val isDarkMode = isDarkModePref ?: systemDarkTheme
                         
@@ -440,7 +440,7 @@ fun AsrScreen(
                 }
             }
             
-            items(conversationHistory) { message ->
+            items(conversationHistory, key = { it.id }) { message ->
                 val isPrimary = message.speakerLang == primaryLang
                 Row(
                     modifier = Modifier.fillMaxWidth(),

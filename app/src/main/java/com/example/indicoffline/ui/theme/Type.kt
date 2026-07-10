@@ -19,7 +19,21 @@ val AppFontFamily = FontFamily(
     Font(R.font.balootamma2_medium, FontWeight.Medium),
     Font(R.font.balootamma2_semibold, FontWeight.SemiBold),
     Font(R.font.balootamma2_bold, FontWeight.Bold),
-    Font(R.font.balootamma2_extrabold, FontWeight.ExtraBold)
+    Font(R.font.balootamma2_extrabold, FontWeight.ExtraBold),
+
+    // Fallback: Baloo Tammudu 2 (Supports Telugu)
+    Font(R.font.balootammudu2_regular, FontWeight.Normal),
+    Font(R.font.balootammudu2_medium, FontWeight.Medium),
+    Font(R.font.balootammudu2_semibold, FontWeight.SemiBold),
+    Font(R.font.balootammudu2_bold, FontWeight.Bold),
+    Font(R.font.balootammudu2_extrabold, FontWeight.ExtraBold),
+
+    // Fallback: Baloo Thambi 2 (Supports Tamil)
+    Font(R.font.baloothambi2_regular, FontWeight.Normal),
+    Font(R.font.baloothambi2_medium, FontWeight.Medium),
+    Font(R.font.baloothambi2_semibold, FontWeight.SemiBold),
+    Font(R.font.baloothambi2_bold, FontWeight.Bold),
+    Font(R.font.baloothambi2_extrabold, FontWeight.ExtraBold)
 )
 
 val baseline = Typography()
