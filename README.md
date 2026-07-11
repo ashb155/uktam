@@ -10,6 +10,7 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 
 ## Key Features
 
+* **Supported Languages:** Currently supports real-time **speech recognition, translation, and text-to-speech** between **Hindi, Kannada, Tamil, and Telugu** (more Indic languages coming soon!)
 * **Real-time Offline Speech Recognition:** Powered by **Sherpa-ONNX** using the [**AI4Bharat IndicConformer**](https://huggingface.co/ai4bharat/IndicConformer) model for high-speed, local transcription.
 * **On-Device Translation:** Leverages the [**Sarvam Translate**](https://huggingface.co/sarvamai/sarvam-translate) model (from Sarvam AI) running via `llama.cpp` through JNI for highly accurate offline machine translation.
 * **Native Text-to-Speech (TTS):** Automatically speaks the translated text using Android's native offline TTS engine.
@@ -17,7 +18,7 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
   * Sleek, high-contrast Dark and Light modes.
   * Haptic feedback for tactile interactions (`Vibration` and `TouchApp` integrations).
   * Smooth transition animations and dynamic chat bubbles.
-* **In-App Model Management:** Built-in downloader to fetch and unpack the necessary AI models directly onto the device's local storage.
+* **Intelligent Model Management:** ASR models are bundled seamlessly via Play Asset Delivery. For the translation model, a built-in downloader intelligently fetches the optimal `llama.cpp` model size based on your device's available RAM to prevent memory crashes.
 
 ## Technology Stack
 
@@ -35,7 +36,8 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 
 * Android Studio (Koala or newer recommended)
 * Android SDK Minimum API Level: 34 (Android 14)
-* Minimum Device RAM: 6GB Recommended (Devices with 4GB or less will be unsupported due to memory constraints and will crash)
+* Minimum Device RAM: 6GB Recommended. The app features dynamic model selection: devices with >6GB RAM receive a higher-accuracy model (`Q4_K_S`), while devices with 6GB or less download a smaller, more efficient model (`Q2_K`) to prevent memory crashes.
+* Storage Requirements: Approximately **3GB of free internal storage** is required to accommodate the downloaded Llama translation model and the bundled ASR assets.
 * Android NDK & CMake (Required for building the `llama.cpp` JNI bindings)
 
 ### Installation & Setup
@@ -51,8 +53,9 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 
 3. **Model Preparation**
    The application requires the ONNX models for ASR and the `.gguf` file for Llama. 
-   - Upon launching the app for the first time, you will be greeted by the `DownloadScreen`. 
-   - Ensure you have an active internet connection for this initial step so the app can download and extract the required AI models to your device's internal storage.
+   - The ASR models are bundled via Play Asset Delivery (`:asr_assets`) and are installed automatically.
+   - Upon launching the app for the first time, the `DownloadScreen` will fetch the Sarvam Llama translation model (approx. 1GB to 2.5GB). 
+   - Ensure you have an active internet connection for this initial step so the app can download the required `.gguf` model to your device's internal storage.
 
 4. **Run the App**
    Connect a physical Android device (emulators may struggle with local model inference without hardware acceleration) and click **Run**.
