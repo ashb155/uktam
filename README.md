@@ -37,7 +37,6 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 * Android Studio (Koala or newer recommended)
 * Android SDK Minimum API Level: 34 (Android 14)
 * Minimum Device RAM: 6GB Recommended. The app features dynamic model selection: devices with >6GB RAM receive a higher-accuracy model (`Q4_K_S`), while devices with 6GB or less download a smaller, more efficient model (`Q2_K`) to prevent memory crashes.
-* Storage Requirements: Approximately **3GB of free internal storage** is required to accommodate the downloaded Llama translation model and the bundled ASR assets.
 * Android NDK & CMake (Required for building the `llama.cpp` JNI bindings)
 
 ### Installation & Setup
