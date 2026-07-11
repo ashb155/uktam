@@ -202,7 +202,9 @@ fun AsrScreen(
                             onClick = { primaryExpanded = true },
                             shape = RoundedCornerShape(24.dp),
                             color = primaryBg,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shadowElevation = 0.dp,
+                            tonalElevation = 0.dp
                         ) {
                             Box(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
@@ -234,7 +236,8 @@ fun AsrScreen(
                                     shape = RoundedCornerShape(24.dp),
                                     color = primaryBg,
                                     modifier = Modifier.width(with(density) { primaryBoxWidth.toDp() }).animateContentSize(),
-                                    shadowElevation = 8.dp
+                                    shadowElevation = 0.dp,
+                                    tonalElevation = 0.dp
                                 ) {
                                     Column {
                                         Box(
@@ -307,7 +310,9 @@ fun AsrScreen(
                             onClick = { secondaryExpanded = true },
                             shape = RoundedCornerShape(24.dp),
                             color = secondaryBg,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shadowElevation = 0.dp,
+                            tonalElevation = 0.dp
                         ) {
                             Box(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
@@ -339,7 +344,8 @@ fun AsrScreen(
                                     shape = RoundedCornerShape(24.dp),
                                     color = secondaryBg,
                                     modifier = Modifier.width(with(density) { secondaryBoxWidth.toDp() }).animateContentSize(),
-                                    shadowElevation = 8.dp
+                                    shadowElevation = 0.dp,
+                                    tonalElevation = 0.dp
                                 ) {
                                     Column {
                                         Box(
