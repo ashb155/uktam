@@ -53,7 +53,7 @@ Uktam.ai is a powerful, entirely offline Android application for real-time speec
 3. **Model Preparation**
    The application requires the ONNX models for ASR and the `.gguf` file for Llama. 
    - The ASR models are bundled via Play Asset Delivery (`:asr_assets`) and are installed automatically.
-   - Upon launching the app for the first time, the `DownloadScreen` will fetch the Sarvam Llama translation model (approx. 1GB to 2.5GB). 
+   - Upon launching the app for the first time, the `DownloadScreen` will fetch the Sarvam Translate model (approx. 1GB to 2.5GB). 
    - Ensure you have an active internet connection for this initial step so the app can download the required `.gguf` model to your device's internal storage.
 
 4. **Run the App**
