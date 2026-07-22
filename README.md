@@ -3,7 +3,7 @@
 Uktam.ai is a powerful, entirely offline Android application for real-time speech-to-text (ASR) transcription and machine translation between Indic languages. Built with modern Android development practices, it runs state-of-the-art AI models directly on your device—ensuring complete privacy and zero reliance on cloud APIs.
 
 <img width="300" alt="image" src="https://github.com/user-attachments/assets/4f24f6bd-4bc7-4214-99ef-7610610f4723" /><br>
-<em>Real-time, fully offline speech-to-speech translation running directly on your device.</em>
+<em>Real-time, fully offline Indic speech-to-speech linguistic pipeline running directly on your Android device.</em>
 
 
 ## Why Uktam.ai?
