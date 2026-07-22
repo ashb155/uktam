@@ -20,6 +20,7 @@ data class ConversationMessage(
     val originalText: String,
     val translatedText: String,
     val speakerLang: String,
+    val isPrimaryUser: Boolean,
     val transcriptionTimeMs: Long = 0L,
     val translationTimeMs: Long = 0L
 )
@@ -91,6 +92,9 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
     private val _isTranslating = MutableStateFlow(false)
     val isTranslating: StateFlow<Boolean> = _isTranslating.asStateFlow()
+
+    private val _streamingTranslation = MutableStateFlow("")
+    val streamingTranslation: StateFlow<String> = _streamingTranslation.asStateFlow()
 
     private val _primaryLang = MutableStateFlow("hi")
     val primaryLang: StateFlow<String> = _primaryLang.asStateFlow()
@@ -190,6 +194,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     fun switchLanguage(lang: String) {
         _srcLang.value = lang
         _transcription.value = ""
+        _streamingTranslation.value = ""
         viewModelScope.launch(Dispatchers.IO) {
             asrEngine.loadLanguage(lang)
         }
@@ -199,12 +204,14 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
         audioCapturer.startRecording()
         _isRecording.value = true
         _transcription.value = "Listening..."
+        _streamingTranslation.value = ""
     }
 
     fun stopRecordingAndProcess(audioCapturer: AudioCapturer, onTtsMissing: (String) -> Unit) {
         _isRecording.value = false
         _isTranslating.value = true
         _transcription.value = "Processing..."
+        _streamingTranslation.value = ""
         
         viewModelScope.launch(Dispatchers.IO) {
             val audioData = audioCapturer.stopAndGetFloatArray()
@@ -232,6 +239,7 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
                         originalText = resultText,
                         translatedText = translated,
                         speakerLang = _srcLang.value,
+                        isPrimaryUser = _srcLang.value == _primaryLang.value,
                         transcriptionTimeMs = asrTime,
                         translationTimeMs = transTime
                     )
@@ -291,7 +299,34 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
 
             val targetLangName = getLanguageName(targetLang)
             val toTargetPrompt = "<bos><start_of_turn>user\nTranslate the text below to $targetLangName.\n\n$englishBridge<end_of_turn>\n<start_of_turn>model\n"
-            val finalTranslation = LlamaWrapper.completion(llamaCtx, toTargetPrompt).trim()
+            
+            _streamingTranslation.value = ""
+            val tokenChannel = kotlinx.coroutines.channels.Channel<String>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+            
+            val typeWriterJob = launch {
+                var displayed = ""
+                for (token in tokenChannel) {
+                    for (char in token) {
+                        displayed += char
+                        _streamingTranslation.value = displayed.trimStart()
+                        kotlinx.coroutines.delay(30) 
+                    }
+                }
+            }
+
+            val sb = java.lang.StringBuilder()
+            LlamaWrapper.generateStream(llamaCtx, toTargetPrompt).collect { token ->
+                if (!token.startsWith("ERROR")) {
+                    sb.append(token)
+                    tokenChannel.trySend(token)
+                }
+            }
+            
+            tokenChannel.close()
+            typeWriterJob.join()
+            
+            val finalTranslation = sb.toString().trim()
+            _streamingTranslation.value = finalTranslation
             
             android.util.Log.d("LlamaTest", "Translation ($srcLang -> English -> $targetLang): '$finalTranslation'")
             finalTranslation

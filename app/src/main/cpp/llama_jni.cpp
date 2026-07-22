@@ -69,6 +69,9 @@ std::vector<int> get_performance_cores() {
 struct LlamaState {
     llama_model *model;
     llama_context *ctx;
+    llama_sampler *sampler;
+    int token_count;
+    bool is_generating;
 };
 
 #include <sys/system_properties.h>
@@ -154,19 +157,27 @@ Java_com_example_indicoffline_LlamaWrapper_loadModel(JNIEnv *env, jobject, jstri
     LlamaState *state = new LlamaState();
     state->model = model;
     state->ctx = ctx;
+    state->sampler = nullptr;
+    state->token_count = 0;
+    state->is_generating = false;
 
     return (jlong) state;
 }
 
-JNIEXPORT jstring JNICALL
-Java_com_example_indicoffline_LlamaWrapper_completion(JNIEnv *env, jobject, jlong statePtr, jstring promptStr) {
+JNIEXPORT jboolean JNICALL
+Java_com_example_indicoffline_LlamaWrapper_startCompletion(JNIEnv *env, jobject, jlong statePtr, jstring promptStr) {
     LlamaState *state = (LlamaState *) statePtr;
     if (!state || !state->model || !state->ctx) {
-        return env->NewStringUTF("ERROR: state is null");
+        return JNI_FALSE;
     }
 
     llama_model *model = state->model;
     llama_context *ctx = state->ctx;
+
+    if (state->sampler) {
+        llama_sampler_free(state->sampler);
+        state->sampler = nullptr;
+    }
 
     llama_memory_t mem = llama_get_memory(ctx);
     if (mem) {
@@ -180,44 +191,75 @@ Java_com_example_indicoffline_LlamaWrapper_completion(JNIEnv *env, jobject, jlon
     int n_tokens = llama_tokenize(vocab, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
     if (n_tokens < 0) {
         env->ReleaseStringUTFChars(promptStr, prompt);
-        return env->NewStringUTF("ERROR: tokenization failed");
+        return JNI_FALSE;
     }
     tokens.resize(n_tokens);
 
     llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
     if (llama_decode(ctx, batch) != 0) {
         env->ReleaseStringUTFChars(promptStr, prompt);
-        return env->NewStringUTF("ERROR: decode failed");
+        return JNI_FALSE;
     }
 
-    llama_sampler *sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
-    llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
+    state->sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
+    llama_sampler_chain_add(state->sampler, llama_sampler_init_greedy());
+    state->token_count = 0;
+    state->is_generating = true;
 
-    std::string result;
-    result.reserve(1024);
-
-    for (int i = 0; i < 200; i++) {
-        llama_token token = llama_sampler_sample(sampler, ctx, -1);
-        if (llama_vocab_is_eog(vocab, token)) break;
-
-        char buf[256];
-        int len = llama_token_to_piece(vocab, token, buf, sizeof(buf), 0, true);
-        if (len < 0) break;
-        result.append(buf, len);
-
-        llama_batch next = llama_batch_get_one(&token, 1);
-        if (llama_decode(ctx, next) != 0) break;
-    }
-
-    llama_sampler_free(sampler);
     env->ReleaseStringUTFChars(promptStr, prompt);
-    return env->NewStringUTF(result.c_str());
+    return JNI_TRUE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_example_indicoffline_LlamaWrapper_getNextToken(JNIEnv *env, jobject, jlong statePtr) {
+    LlamaState *state = (LlamaState *) statePtr;
+    if (!state || !state->is_generating || !state->sampler) {
+        return nullptr;
+    }
+
+    if (state->token_count >= 200) {
+        state->is_generating = false;
+        llama_sampler_free(state->sampler);
+        state->sampler = nullptr;
+        return nullptr;
+    }
+
+    const llama_vocab *vocab = llama_model_get_vocab(state->model);
+    llama_token token = llama_sampler_sample(state->sampler, state->ctx, -1);
+    
+    if (llama_vocab_is_eog(vocab, token)) {
+        state->is_generating = false;
+        llama_sampler_free(state->sampler);
+        state->sampler = nullptr;
+        return nullptr;
+    }
+
+    char buf[256];
+    int len = llama_token_to_piece(vocab, token, buf, sizeof(buf), 0, true);
+    if (len < 0) {
+        state->is_generating = false;
+        llama_sampler_free(state->sampler);
+        state->sampler = nullptr;
+        return nullptr;
+    }
+
+    state->token_count++;
+
+    llama_batch next = llama_batch_get_one(&token, 1);
+    if (llama_decode(state->ctx, next) != 0) {
+        state->is_generating = false;
+        llama_sampler_free(state->sampler);
+        state->sampler = nullptr;
+    }
+
+    return env->NewStringUTF(std::string(buf, len).c_str());
 }
 
 JNIEXPORT void JNICALL
 Java_com_example_indicoffline_LlamaWrapper_freeModel(JNIEnv *env, jobject, jlong statePtr) {
     if (statePtr) {
         auto *state = (LlamaState *) statePtr;
+        if (state->sampler) llama_sampler_free(state->sampler);
         if (state->ctx) llama_free(state->ctx);
         if (state->model) llama_model_free(state->model);
         delete state;

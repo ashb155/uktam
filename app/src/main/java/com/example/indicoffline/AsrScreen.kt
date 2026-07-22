@@ -94,6 +94,7 @@ fun AsrScreen(
     val primaryLang by viewModel.primaryLang.collectAsStateWithLifecycle()
     val secondaryLang by viewModel.secondaryLang.collectAsStateWithLifecycle()
     val transcription by viewModel.transcription.collectAsStateWithLifecycle()
+    val streamingTranslation by viewModel.streamingTranslation.collectAsStateWithLifecycle()
     val conversationHistory by viewModel.conversationHistory.collectAsStateWithLifecycle()
     val isRecording by viewModel.isRecording.collectAsStateWithLifecycle()
     val isTranslating by viewModel.isTranslating.collectAsStateWithLifecycle()
@@ -200,6 +201,7 @@ fun AsrScreen(
                         
                         Surface(
                             onClick = { primaryExpanded = true },
+                            enabled = !isRecording && !isTranslating,
                             shape = RoundedCornerShape(24.dp),
                             color = primaryBg,
                             modifier = Modifier.fillMaxWidth(),
@@ -308,6 +310,7 @@ fun AsrScreen(
 
                         Surface(
                             onClick = { secondaryExpanded = true },
+                            enabled = !isRecording && !isTranslating,
                             shape = RoundedCornerShape(24.dp),
                             color = secondaryBg,
                             modifier = Modifier.fillMaxWidth(),
@@ -401,53 +404,15 @@ fun AsrScreen(
             }
         }
 
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (conversationHistory.isEmpty() && !isRecording && !isTranslating) {
-                item {
-                    Box(
-                        modifier = Modifier.fillParentMaxSize().padding(bottom = 60.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) { 
-                            Text(
-                                text = "Tap the languages at the top to choose your preferred languages",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Press the mic icon and speak in your preferred language",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Translation and speech in required language will appear automatically",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Press the swap icon to switch turns",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-            
-            items(conversationHistory, key = { it.id }) { message ->
-                val isPrimary = message.speakerLang == primaryLang
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(conversationHistory, key = { it.id }) { message ->
+                val isPrimary = message.isPrimaryUser
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = if (isPrimary) Arrangement.Start else Arrangement.End
@@ -463,7 +428,7 @@ fun AsrScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -476,7 +441,7 @@ fun AsrScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                                 
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(16.dp))
                                 val targetLangCode = if (isPrimary) secondaryLang else primaryLang
                                 IconButton(
                                     onClick = { viewModel.speakTranslation(message.translatedText, targetLangCode, onTtsMissing) },
@@ -505,10 +470,14 @@ fun AsrScreen(
             }
 
             item {
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = isRecording || isTranslating,
                     enter = fadeIn(tween(300)) + expandVertically(tween(300)),
-                    exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+                    exit = if (transcription.isEmpty()) {
+                        fadeOut(tween(300)) + shrinkVertically(tween(300))
+                    } else {
+                        fadeOut(tween(0)) + shrinkVertically(tween(0))
+                    }
                 ) {
                     val isPrimary = srcLang == primaryLang
                     Row(
@@ -518,7 +487,7 @@ fun AsrScreen(
                         Surface(
                             color = if (isPrimary) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(0.85f).animateContentSize(animationSpec = tween(300, easing = LinearOutSlowInEasing))
+                            modifier = Modifier.fillMaxWidth(0.85f)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
@@ -534,20 +503,75 @@ fun AsrScreen(
                                 ) {
                                     Column {
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer)
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Translating...",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                                            )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (streamingTranslation.isEmpty()) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer)
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = "Translating...",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
+                                                }
+                                            } else {
+                                                Text(
+                                                    text = streamingTranslation,
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Spacer(modifier = Modifier.size(28.dp)) 
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
+            }
+            
+            androidx.compose.animation.AnimatedVisibility(
+                visible = conversationHistory.isEmpty() && !isRecording && !isTranslating,
+                enter = fadeIn(tween(300)),
+                exit = fadeOut(tween(300)),
+                modifier = Modifier.align(Alignment.Center).padding(bottom = 160.dp, start = 32.dp, end = 32.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) { 
+                    Text(
+                        text = "Tap the languages at the top to choose your preferred languages",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Press the mic icon and speak in your preferred language",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Translation and speech in required language will appear automatically",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Press the swap icon to switch turns",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
