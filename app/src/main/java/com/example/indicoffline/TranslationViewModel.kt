@@ -103,15 +103,17 @@ class TranslationViewModel(application: Application) : AndroidViewModel(applicat
     val secondaryLang: StateFlow<String> = _secondaryLang.asStateFlow()
 
     fun setPrimaryLang(lang: String) {
+        val wasPrimary = _srcLang.value == _primaryLang.value
         _primaryLang.value = lang
-        if (_srcLang.value != _secondaryLang.value) {
+        if (wasPrimary) {
             switchLanguage(lang)
         }
     }
 
     fun setSecondaryLang(lang: String) {
+        val wasSecondary = _srcLang.value == _secondaryLang.value
         _secondaryLang.value = lang
-        if (_srcLang.value == _secondaryLang.value) {
+        if (wasSecondary) {
             switchLanguage(lang)
         }
     }
